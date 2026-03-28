@@ -1,8 +1,7 @@
-const fs = require("fs");
-const MarkdownIt = require("markdown-it");
-const anchor = require("markdown-it-anchor");
-const toc = require("markdown-it-table-of-contents");
-const puppeteer = require("puppeteer");
+import MarkdownIt from "markdown-it";
+import anchor from "markdown-it-anchor";
+import toc from "markdown-it-table-of-contents";
+import puppeteer from "puppeteer";
 
 async function convert(mdContent, pdfFile, onLog = () => {}) {
   onLog(10, "جاري تحليل الـ Markdown...");
@@ -268,5 +267,5 @@ ${htmlContent}
   onLog(100, "✅ تم إنشاء الـ PDF بنجاح");
 }
 
-module.exports = convert;
+export default convert;
 
