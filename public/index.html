@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>MD to PDF</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #0f172a;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.container {
+  background: #1e293b;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+  width: 400px;
+}
+
+input {
+  margin: 15px 0;
+}
+
+button {
+  background: #2563eb;
+  border: none;
+  padding: 10px 20px;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h2>📄 تحويل Markdown إلى PDF</h2>
+
+  <form id="form">
+    <input type="file" name="file" accept=".md" required />
+    <br>
+    <button type="submit">تحويل</button>
+  </form>
+
+  <p id="status"></p>
+</div>
+
+<script>
+const form = document.getElementById("form");
+const status = document.getElementById("status");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData(form);
+
+  status.innerText = "⏳ جاري التحويل...";
+
+  const res = await fetch("/convert", {
+    method: "POST",
+    body: formData
+  });
+
+  if (!res.ok) {
+    status.innerText = "❌ حصل خطأ";
+    return;
+  }
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "output.pdf";
+  a.click();
+
+  status.innerText = "✅ تم التحويل";
+});
+</script>
+</body>
+</html>
