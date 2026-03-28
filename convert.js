@@ -4,8 +4,9 @@ const anchor = require("markdown-it-anchor");
 const toc = require("markdown-it-table-of-contents");
 const puppeteer = require("puppeteer");
 
-async function convert(mdContent, pdfFile) {
-  // Markdown parser قوي
+async function convert(mdContent, pdfFile, onLog = () => {}) {
+  onLog(10, "جاري تحليل الـ Markdown...");
+
   const md = new MarkdownIt({
     html: true,
     linkify: true,
@@ -16,6 +17,8 @@ async function convert(mdContent, pdfFile) {
     .use(toc);
 
   const htmlContent = md.render(mdContent);
+
+  onLog(30, "جاري بناء هيكل HTML...");
 
   const fullHtml = `
 <!DOCTYPE html>
@@ -194,11 +197,28 @@ async function convert(mdContent, pdfFile) {
     border-radius: 8px;
   }
 
-  /* ===== Print ===== */
-  @media print {
-    h2, h3, h4 { page-break-after: avoid; }
-    table { page-break-inside: auto; }
-    tr { page-break-inside: avoid; }
+  /* ===== Page Breaks ===== */
+  h1, h2, h3, h4 {
+    page-break-after: avoid;
+    break-after: avoid-page;
+  }
+
+  h1 + *, h2 + *, h3 + *, h4 + * {
+    page-break-before: avoid;
+    break-before: avoid-page;
+  }
+
+  table {
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  p {
+    orphans: 3;
+    widows: 3;
   }
 </style>
 </head>
@@ -209,12 +229,19 @@ ${htmlContent}
 </html>
 `;
 
+  onLog(50, "جاري تشغيل المتصفح...");
+
   const browser = await puppeteer.launch({
     headless: true,
   });
 
   const page = await browser.newPage();
+
+  onLog(70, "جاري تحميل المحتوى والخطوط...");
+
   await page.setContent(fullHtml, { waitUntil: "networkidle0" });
+
+  onLog(85, "جاري إنشاء الـ PDF...");
 
   await page.pdf({
     path: pdfFile,
@@ -238,7 +265,7 @@ ${htmlContent}
 
   await browser.close();
 
-  console.log("✅ تم إنشاء PDF:", pdfFile);
+  onLog(100, "✅ تم إنشاء الـ PDF بنجاح");
 }
 
 module.exports = convert;

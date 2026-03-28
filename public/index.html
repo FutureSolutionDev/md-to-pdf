@@ -2,86 +2,565 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>MD to PDF</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MD → PDF</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-body {
-  font-family: Arial;
-  background: #0f172a;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-.container {
-  background: #1e293b;
-  padding: 30px;
-  border-radius: 12px;
-  text-align: center;
-  width: 400px;
-}
+  :root {
+    --navy: #1e3a5f;
+    --gold: #c9a227;
+    --bg: #0b1120;
+    --card: #111827;
+    --border: #1f2d3d;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --success: #22c55e;
+    --error: #ef4444;
+  }
 
-input {
-  margin: 15px 0;
-}
+  body {
+    font-family: 'Cairo', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
 
-button {
-  background: #2563eb;
-  border: none;
-  padding: 10px 20px;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-}
+  /* ===== Header ===== */
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .header-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .header h1 {
+    font-size: 26px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #fff 0%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+
+  .header p {
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* ===== Card ===== */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* ===== Drop Zone ===== */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .drop-zone:hover,
+  .drop-zone.dragover {
+    border-color: var(--gold);
+    background: rgba(201, 162, 39, 0.05);
+  }
+
+  .drop-zone input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .drop-icon { font-size: 36px; margin-bottom: 10px; }
+
+  .drop-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .drop-sub { font-size: 13px; color: var(--muted); }
+
+  /* ===== File Selected ===== */
+  .file-info {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    background: rgba(30, 58, 95, 0.3);
+    border: 1px solid rgba(201, 162, 39, 0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+  }
+
+  .file-info.visible { display: flex; }
+
+  .file-icon-wrap {
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+
+  .file-details { flex: 1; min-width: 0; }
+
+  .file-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .file-size { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .clear-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: color 0.2s;
+    flex-shrink: 0;
+  }
+
+  .clear-btn:hover { color: var(--error); }
+
+  /* ===== Convert Button ===== */
+  .convert-btn {
+    background: linear-gradient(135deg, var(--navy), #2e5c99);
+    border: none;
+    border-radius: 10px;
+    padding: 13px 24px;
+    color: #fff;
+    font-family: 'Cairo', Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+    width: 100%;
+  }
+
+  .convert-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2e5c99, var(--gold));
+    transform: translateY(-1px);
+  }
+
+  .convert-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-arrow { font-size: 18px; }
+
+  /* ===== Progress ===== */
+  .progress-section {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .progress-section.visible { display: flex; }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+  }
+
+  .progress-label { color: var(--text); font-weight: 600; }
+  .progress-percent { color: var(--gold); font-weight: 700; }
+
+  .progress-track {
+    height: 8px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--navy), var(--gold));
+    border-radius: 99px;
+    transition: width 0.4s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* ===== Terminal ===== */
+  .terminal {
+    display: none;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .terminal.visible { display: block; }
+
+  .terminal-header {
+    background: #1a1a2e;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .terminal-dots { display: flex; gap: 6px; }
+
+  .terminal-dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .terminal-dots span:nth-child(1) { background: #ef4444; }
+  .terminal-dots span:nth-child(2) { background: #f59e0b; }
+  .terminal-dots span:nth-child(3) { background: #22c55e; }
+
+  .terminal-body {
+    background: #0d1117;
+    padding: 14px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    direction: rtl;
+    text-align: right;
+  }
+
+  .terminal-body::-webkit-scrollbar { width: 4px; }
+  .terminal-body::-webkit-scrollbar-track { background: transparent; }
+  .terminal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .log-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 3px 0;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .log-time { color: #334155; flex-shrink: 0; }
+  .log-msg  { color: #94a3b8; }
+  .log-msg.done  { color: var(--success); }
+  .log-msg.error { color: var(--error); }
+
+  /* ===== Download Button ===== */
+  .download-btn {
+    display: none;
+    background: linear-gradient(135deg, #15803d, #22c55e);
+    border: none;
+    border-radius: 10px;
+    padding: 13px 24px;
+    color: #fff;
+    font-family: 'Cairo', Arial, sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+    animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .download-btn.visible { display: block; }
+
+  .download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(34,197,94,0.3);
+  }
+
+  @keyframes popIn {
+    from { transform: scale(0.8); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+
+  /* ===== Error State ===== */
+  .error-msg {
+    display: none;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--error);
+    text-align: center;
+  }
+
+  .error-msg.visible { display: block; }
 </style>
 </head>
-
 <body>
-<div class="container">
-  <h2>📄 تحويل Markdown إلى PDF</h2>
 
-  <form id="form">
-    <input type="file" name="file" accept=".md" required />
-    <br>
-    <button type="submit">تحويل</button>
-  </form>
+<div class="header">
+  <span class="header-icon">📄</span>
+  <h1>تحويل Markdown إلى PDF</h1>
+  <p>ارفع ملف .md واحصل على PDF احترافي جاهز للإرسال</p>
+</div>
 
-  <p id="status"></p>
+<div class="card">
+
+  <!-- Drop Zone -->
+  <div class="drop-zone" id="dropZone">
+    <input type="file" id="fileInput" accept=".md">
+    <div class="drop-icon">📂</div>
+    <div class="drop-text">اسحب ملف .md هنا</div>
+    <div class="drop-sub">أو اضغط للاختيار</div>
+  </div>
+
+  <!-- File Info -->
+  <div class="file-info" id="fileInfo">
+    <div class="file-icon-wrap">📄</div>
+    <div class="file-details">
+      <div class="file-name" id="fileName">—</div>
+      <div class="file-size" id="fileSize">—</div>
+    </div>
+    <button class="clear-btn" id="clearBtn" title="إزالة">✕</button>
+  </div>
+
+  <!-- Convert Button -->
+  <button class="convert-btn" id="convertBtn" disabled>
+    <span>تحويل إلى PDF</span>
+    <span class="btn-arrow">←</span>
+  </button>
+
+  <!-- Progress -->
+  <div class="progress-section" id="progressSection">
+    <div class="progress-header">
+      <span class="progress-label" id="progressLabel">جاري التحويل...</span>
+      <span class="progress-percent" id="progressPercent">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- Terminal -->
+  <div class="terminal" id="terminal">
+    <div class="terminal-header">
+      <div class="terminal-dots"><span></span><span></span><span></span></div>
+      <span>سجل العمليات</span>
+    </div>
+    <div class="terminal-body" id="terminalBody"></div>
+  </div>
+
+  <!-- Download -->
+  <button class="download-btn" id="downloadBtn">⬇ تحميل الـ PDF</button>
+
+  <!-- Error -->
+  <div class="error-msg" id="errorMsg">❌ حدث خطأ أثناء التحويل. تحقق من صحة الملف وحاول مجدداً.</div>
+
 </div>
 
 <script>
-const form = document.getElementById("form");
-const status = document.getElementById("status");
+  const fileInput    = document.getElementById("fileInput");
+  const dropZone     = document.getElementById("dropZone");
+  const fileInfo     = document.getElementById("fileInfo");
+  const fileName     = document.getElementById("fileName");
+  const fileSize     = document.getElementById("fileSize");
+  const clearBtn     = document.getElementById("clearBtn");
+  const convertBtn   = document.getElementById("convertBtn");
+  const progressSection = document.getElementById("progressSection");
+  const progressFill = document.getElementById("progressFill");
+  const progressLabel = document.getElementById("progressLabel");
+  const progressPercent = document.getElementById("progressPercent");
+  const terminal     = document.getElementById("terminal");
+  const terminalBody = document.getElementById("terminalBody");
+  const downloadBtn  = document.getElementById("downloadBtn");
+  const errorMsg     = document.getElementById("errorMsg");
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
+  let selectedFile = null;
+  let currentJobId = null;
 
-  const formData = new FormData(form);
-
-  status.innerText = "⏳ جاري التحويل...";
-
-  const res = await fetch("/convert", {
-    method: "POST",
-    body: formData
-  });
-
-  if (!res.ok) {
-    status.innerText = "❌ حصل خطأ";
-    return;
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   }
 
-  const blob = await res.blob();
-  const url = window.URL.createObjectURL(blob);
+  function setFile(file) {
+    if (!file || !file.name.endsWith(".md")) return;
+    selectedFile = file;
+    fileName.textContent = file.name;
+    fileSize.textContent = formatSize(file.size);
+    dropZone.style.display = "none";
+    fileInfo.classList.add("visible");
+    convertBtn.disabled = false;
+    resetState();
+  }
 
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "output.pdf";
-  a.click();
+  function resetState() {
+    progressSection.classList.remove("visible");
+    terminal.classList.remove("visible");
+    downloadBtn.classList.remove("visible");
+    errorMsg.classList.remove("visible");
+    terminalBody.innerHTML = "";
+    progressFill.style.width = "0%";
+    progressPercent.textContent = "0%";
+    currentJobId = null;
+  }
 
-  status.innerText = "✅ تم التحويل";
-});
+  function addLog(message, type = "") {
+    const now = new Date();
+    const time = now.toTimeString().slice(0, 8);
+    const line = document.createElement("div");
+    line.className = "log-line";
+    line.innerHTML = `<span class="log-time">[${time}]</span><span class="log-msg ${type}">${message}</span>`;
+    terminalBody.appendChild(line);
+    terminalBody.scrollTop = terminalBody.scrollHeight;
+  }
+
+  function setProgress(percent, label) {
+    progressFill.style.width = percent + "%";
+    progressPercent.textContent = percent + "%";
+    progressLabel.textContent = label || "جاري التحويل...";
+  }
+
+  // Drag & Drop
+  dropZone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropZone.classList.add("dragover");
+  });
+
+  dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+
+  dropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZone.classList.remove("dragover");
+    setFile(e.dataTransfer.files[0]);
+  });
+
+  fileInput.addEventListener("change", () => setFile(fileInput.files[0]));
+
+  clearBtn.addEventListener("click", () => {
+    selectedFile = null;
+    fileInput.value = "";
+    fileInfo.classList.remove("visible");
+    dropZone.style.display = "";
+    convertBtn.disabled = true;
+    resetState();
+  });
+
+  convertBtn.addEventListener("click", async () => {
+    if (!selectedFile) return;
+
+    convertBtn.disabled = true;
+    progressSection.classList.add("visible");
+    terminal.classList.add("visible");
+    downloadBtn.classList.remove("visible");
+    errorMsg.classList.remove("visible");
+    terminalBody.innerHTML = "";
+    setProgress(0, "جاري الرفع...");
+
+    addLog("جاري رفع الملف...");
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    let jobId;
+    try {
+      const res = await fetch("/convert", { method: "POST", body: formData });
+      const data = await res.json();
+      jobId = data.jobId;
+      currentJobId = jobId;
+    } catch {
+      errorMsg.classList.add("visible");
+      convertBtn.disabled = false;
+      return;
+    }
+
+    addLog("بدأ التحويل — Job #" + jobId);
+
+    const es = new EventSource(`/stream/${jobId}`);
+
+    es.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+
+      if (data.done) {
+        es.close();
+        setProgress(100, "✅ اكتمل التحويل");
+        addLog("✅ تم إنشاء الـ PDF بنجاح", "done");
+        downloadBtn.classList.add("visible");
+        convertBtn.disabled = false;
+        downloadBtn.onclick = () => {
+          window.location.href = `/download/${jobId}`;
+        };
+        return;
+      }
+
+      if (data.error) {
+        es.close();
+        addLog("❌ فشل التحويل", "error");
+        errorMsg.classList.add("visible");
+        convertBtn.disabled = false;
+        return;
+      }
+
+      if (data.percent) setProgress(data.percent, data.message);
+      if (data.message) addLog(data.message, data.percent === 100 ? "done" : "");
+    };
+
+    es.onerror = () => {
+      es.close();
+      addLog("❌ انقطع الاتصال بالسيرفر", "error");
+      errorMsg.classList.add("visible");
+      convertBtn.disabled = false;
+    };
+  });
 </script>
 </body>
 </html>
