@@ -1,11 +1,14 @@
-const express = require("express");
-const multer = require("multer");
-const fs = require("fs");
-const path = require("path");
-const convert = require("./convert");
+import { Hono } from "hono";
+import { serveStatic } from "hono/bun";
+import { streamSSE } from "hono/streaming";
+import { mkdirSync } from "node:fs";
+import { unlink } from "node:fs/promises";
+import { extname, basename } from "node:path";
+import convert from "./convert";
 
-const app = express();
-const upload = multer({ dest: "uploads/" });
+mkdirSync("uploads", { recursive: true });
+
+const app = new Hono();
 const jobs = new Map();
 
 // تنظيف الـ jobs القديمة كل دقيقة
@@ -13,22 +16,29 @@ setInterval(() => {
   const now = Date.now();
   for (const [id, job] of jobs) {
     if (now - job.createdAt > 10 * 60 * 1000) {
-      fs.unlink(job.mdPath, () => {});
-      fs.unlink(job.pdfPath, () => {});
+      unlink(job.mdPath).catch(() => {});
+      unlink(job.pdfPath).catch(() => {});
       jobs.delete(id);
     }
   }
-}, 60 * 1000);
+}, 60_000);
 
-app.use(express.static("public"));
+// POST /convert
+app.post("/convert", async (c) => {
+  const body = await c.req.parseBody();
+  const file = body["file"];
 
-app.post("/convert", upload.single("file"), async (req, res) => {
+  if (!file || !(file instanceof File)) {
+    return c.json({ error: "No file uploaded" }, 400);
+  }
+
   const jobId = Date.now().toString();
-  const mdPath = req.file.path;
+  const mdPath = `uploads/${jobId}.md`;
   const pdfPath = `uploads/${jobId}.pdf`;
   const originalName =
-    path.basename(req.file.originalname, path.extname(req.file.originalname)) +
-    ".pdf";
+    basename(file.name, extname(file.name)) + ".pdf";
+
+  await Bun.write(mdPath, await file.arrayBuffer());
 
   jobs.set(jobId, {
     status: "processing",
@@ -39,83 +49,96 @@ app.post("/convert", upload.single("file"), async (req, res) => {
     createdAt: Date.now(),
   });
 
-  res.json({ jobId });
+  // بدء التحويل في الخلفية
+  (async () => {
+    try {
+      const mdContent = await Bun.file(mdPath).text();
 
-  const mdContent = fs.readFileSync(mdPath, "utf8");
+      await convert(mdContent, pdfPath, (percent, message) => {
+        const job = jobs.get(jobId);
+        if (job) job.logs.push({ percent, message });
+      });
 
-  try {
-    await convert(mdContent, pdfPath, (percent, message) => {
       const job = jobs.get(jobId);
-      if (job) job.logs.push({ percent, message });
-    });
-
-    const job = jobs.get(jobId);
-    if (job) job.status = "done";
-  } catch (err) {
-    console.error(err);
-    const job = jobs.get(jobId);
-    if (job) {
-      job.status = "error";
-      job.logs.push({ percent: 0, message: `❌ خطأ: ${err.message}` });
+      if (job) job.status = "done";
+    } catch (err) {
+      console.error(err);
+      const job = jobs.get(jobId);
+      if (job) {
+        job.status = "error";
+        job.logs.push({ percent: 0, message: `❌ خطأ: ${err.message}` });
+      }
     }
-  }
+  })();
+
+  return c.json({ jobId });
 });
 
-app.get("/stream/:jobId", (req, res) => {
-  const { jobId } = req.params;
+// GET /stream/:jobId — SSE
+app.get("/stream/:jobId", (c) => {
+  const jobId = c.req.param("jobId");
 
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.flushHeaders();
+  return streamSSE(c, async (stream) => {
+    let lastIndex = 0;
 
-  let lastIndex = 0;
-  const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+    while (true) {
+      const job = jobs.get(jobId);
 
-  const interval = setInterval(() => {
-    const job = jobs.get(jobId);
+      if (!job) {
+        await stream.writeSSE({ data: JSON.stringify({ error: "Job not found" }) });
+        return;
+      }
 
-    if (!job) {
-      send({ error: "Job not found" });
-      clearInterval(interval);
-      return res.end();
+      while (lastIndex < job.logs.length) {
+        await stream.writeSSE({ data: JSON.stringify(job.logs[lastIndex++]) });
+      }
+
+      if (job.status === "done") {
+        await stream.writeSSE({ data: JSON.stringify({ done: true }) });
+        return;
+      }
+
+      if (job.status === "error") {
+        await stream.writeSSE({ data: JSON.stringify({ error: true }) });
+        return;
+      }
+
+      await stream.sleep(200);
     }
-
-    while (lastIndex < job.logs.length) {
-      send(job.logs[lastIndex++]);
-    }
-
-    if (job.status === "done") {
-      send({ done: true });
-      clearInterval(interval);
-      res.end();
-    } else if (job.status === "error") {
-      send({ error: true });
-      clearInterval(interval);
-      res.end();
-    }
-  }, 200);
-
-  req.on("close", () => clearInterval(interval));
-});
-
-app.get("/download/:jobId", (req, res) => {
-  const { jobId } = req.params;
-  const job = jobs.get(jobId);
-
-  if (!job || job.status !== "done") {
-    return res.status(404).send("Not ready");
-  }
-
-  res.download(job.pdfPath, job.originalName, () => {
-    setTimeout(() => {
-      fs.unlink(job.mdPath, () => {});
-      fs.unlink(job.pdfPath, () => {});
-      jobs.delete(jobId);
-    }, 500);
   });
 });
 
-app.listen(3050, () => {
-  console.log("🚀 Server running on http://localhost:3050");
+// GET /download/:jobId
+app.get("/download/:jobId", async (c) => {
+  const jobId = c.req.param("jobId");
+  const job = jobs.get(jobId);
+
+  if (!job || job.status !== "done") {
+    return c.text("Not ready", 404);
+  }
+
+  const fileData = await Bun.file(job.pdfPath).arrayBuffer();
+
+  setTimeout(() => {
+    unlink(job.mdPath).catch(() => {});
+    unlink(job.pdfPath).catch(() => {});
+    jobs.delete(jobId);
+  }, 500);
+
+  return new Response(fileData, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(job.originalName)}`,
+    },
+  });
 });
+
+// Static files
+app.use("*", serveStatic({ root: "./public" }));
+
+const server = Bun.serve({
+  port: 3050,
+  fetch: app.fetch,
+});
+
+console.log(`🚀 Server running on http://localhost:${server.port}`);

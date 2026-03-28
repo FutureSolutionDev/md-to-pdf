@@ -2,16 +2,15 @@
   "name": "md-to-pdf",
   "version": "1.0.0",
   "description": "Convert Markdown to PDF",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "bun run server.js",
+    "dev": "bun run server.js"
   },
   "dependencies": {
-    "express": "^5.2.1",
+    "hono": "^4.7.5",
     "markdown-it": "^14.1.1",
     "markdown-it-anchor": "^9.2.0",
     "markdown-it-table-of-contents": "^1.2.0",
-    "multer": "^2.1.1",
     "puppeteer": "^24.40.0"
   }
 }
