@@ -63,20 +63,24 @@ class Router {
         
         // Set the HTML without scripts
         app.innerHTML = tempDiv.innerHTML;
-        console.log('HTML set, executing scripts...');
         
         // Execute scripts
         scripts.forEach(scriptText => {
           if (scriptText && scriptText.trim()) {
-            console.log('Executing script:', scriptText.substring(0, 100));
             try {
               eval(scriptText);
-              console.log('Script executed successfully');
             } catch (err) {
               console.error('Script error:', err);
             }
           }
         });
+        
+        // Call the init function for this page
+        const initFn = `init${page.charAt(0).toUpperCase() + page.slice(1)}`;
+        if (typeof window[initFn] === 'function') {
+          console.log('Calling', initFn);
+          window[initFn]();
+        }
         
         console.log('Page loaded:', page);
       }
@@ -183,10 +187,5 @@ router.addRoute('/404', async () => {
 // Export for use in other scripts
 window.router = router;
 
-// Auto-init when router.js loads
-console.log('Router: Initializing...');
-router.init().then(() => {
-  console.log('Router: Initialized successfully');
-}).catch(err => {
-  console.error('Router: Init failed', err);
-});
+// Don't auto-init here - let the first page load trigger init
+console.log('Router: Defined, waiting for first page load...');

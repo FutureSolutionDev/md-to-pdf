@@ -68,15 +68,13 @@
   <script src="/assets/js/api.js"></script>
   <script src="/assets/js/app.js"></script>
   <script>
-    // Wait for all scripts and init
-    window.onload = function() {
-      setTimeout(() => {
-        console.log('All loaded');
-        console.log('router:', typeof window.router);
-        console.log('i18n:', typeof window.i18n);
-        console.log('api:', typeof window.api);
-      }, 500);
-    };
+    // Initialize router after all scripts are loaded
+    console.log('Initializing router...');
+    window.router.init().then(() => {
+      console.log('Router initialized');
+    }).catch(err => {
+      console.error('Router init failed:', err);
+    });
   </script>
 </body>
 </html>

@@ -187,9 +187,10 @@
 </div>
 
 <script>
+  console.log('LOGIN PAGE SCRIPT STARTED');
   function initLogin() {
-    alert('initLogin called');
-    console.log('initLogin started');
+    // alert('initLogin CALLED');
+    console.log('initLogin STARTED');
     const form = document.getElementById('loginForm');
     const emailInput = document.getElementById('loginEmail');
     const passwordInput = document.getElementById('loginPassword');
@@ -220,17 +221,16 @@
       }
     }
     const HandleLogin = async (e) => {
+      console.log('HandleLogin called!');
       e.preventDefault();
+      e.stopPropagation();
+      console.log('Event prevented');
       hideError();
 
       const email = emailInput.value.trim();
       const password = passwordInput.value;
-      console.log({
-        email,
-        password
-      })
-      return;
-
+      console.log('Email:', email, 'Password:', password ? 'provided' : 'empty');
+      
       if (!email) {
         showError(window.i18n ? window.i18n.t('error.email_invalid') : 'البريد الإلكتروني مطلوب');
         emailInput.classList.add('error');
@@ -244,6 +244,7 @@
       }
 
       setLoading(true);
+      console.log('Calling API...');
 
       try {
         const result = await window.api.login(email, password);
@@ -252,12 +253,12 @@
         if (result.user) {
           window.currentUser = result;
           window.updateAuthUI();
-          // Navigate to convert page using full page reload
-          // window.location.href = '/convert';
+          window.location.href = '/convert';
         } else {
           showError(result.error || (window.i18n ? window.i18n.t('error.login_failed') : 'فشل تسجيل الدخول'));
         }
       } catch (err) {
+        console.error('Login error:', err);
         let msg;
         try {
           const parsed = JSON.parse(err.message);
@@ -269,9 +270,11 @@
       } finally {
         setLoading(false);
       }
-
-    }
+    };
+    
+    console.log('Adding event listener...');
     form.addEventListener('submit', HandleLogin);
+    console.log('Event listener added');
 
     emailInput.addEventListener('input', () => {
       emailInput.classList.remove('error');
