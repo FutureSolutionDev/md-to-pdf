@@ -10,22 +10,48 @@
 <body>
   <div class="app-container">
     <aside class="sidebar" id="sidebar">
-      <!-- Sidebar will be loaded here -->
+      <div class="sidebar-header">
+        <span class="sidebar-logo">📄</span>
+        <span class="sidebar-title">MD → PDF</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="/convert" class="nav-item" data-link data-nav="/convert">
+          <span class="nav-icon">📄</span>
+          <span class="nav-text" data-i18n="nav.convert">تحويل</span>
+        </a>
+        <a href="/files" class="nav-item" data-link data-nav="/files" data-auth="required">
+          <span class="nav-icon">📁</span>
+          <span class="nav-text" data-i18n="nav.files">ملفاتي</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="sidebar-toggle-btn" id="sidebarToggleBtn">
+          <span class="toggle-icon">◀</span>
+          <span class="toggle-text" data-i18n="ui.collapse">طي</span>
+        </button>
+      </div>
     </aside>
     <main class="main-content">
       <header class="navbar">
         <button class="sidebar-toggle" id="sidebarToggle">☰</button>
         <div class="navbar-brand">
           <span class="brand-icon">📄</span>
-          <span class="brand-text">MD → PDF</span>
+          <span class="brand-text" data-i18n="app.title">MD → PDF</span>
         </div>
         <div class="navbar-actions">
           <select class="lang-select" id="langSelect">
             <option value="ar">🇸🇦 العربية</option>
             <option value="en">🇬🇧 English</option>
           </select>
-          <div class="user-menu" id="userMenu">
-            <!-- User menu loaded dynamically -->
+          <div class="auth-buttons" id="authButtons">
+            <a href="/login" class="btn btn-outline" data-link data-i18n="auth.login">تسجيل دخول</a>
+            <a href="/register" class="btn btn-primary" data-link data-i18n="auth.register">إنشاء حساب</a>
+          </div>
+          <div class="user-menu" id="userMenu" style="display: none;">
+            <span class="user-name"></span>
+            <button class="btn btn-outline btn-sm" onclick="handleLogout()">
+              <span data-i18n="nav.logout">تسجيل خروج</span>
+            </button>
           </div>
         </div>
       </header>
@@ -33,10 +59,6 @@
         <div class="loading">جاري التحميل...</div>
       </div>
     </main>
-  </div>
-  
-  <div class="modal" id="authModal">
-    <!-- Auth modal content -->
   </div>
   
   <div class="toast-container" id="toastContainer"></div>

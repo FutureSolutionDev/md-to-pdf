@@ -30,7 +30,8 @@ function initRouter() {
 async function checkAuth() {
   try {
     if (window.api) {
-      currentUser = await window.api.me();
+      const response = await window.api.me();
+      currentUser = response;
     }
   } catch {
     currentUser = null;
@@ -40,22 +41,32 @@ async function checkAuth() {
 
 function updateAuthUI() {
   const userMenu = document.getElementById("userMenu");
-  const authLinks = document.querySelectorAll("[data-auth]");
+  const authButtons = document.getElementById("authButtons");
+  const navItems = document.querySelectorAll("[data-auth]");
+  const sidebar = document.getElementById("sidebar");
 
-  if (currentUser && userMenu) {
-    const logoutText = window.i18n ? window.i18n.t("nav.logout") : "تسجيل خروج";
-    userMenu.innerHTML = `
-      <span class="user-name">${currentUser.name || currentUser.email}</span>
-      <button class="logout-btn" onclick="handleLogout()">${logoutText}</button>
-    `;
+  if (currentUser && currentUser.user) {
+    // Show user menu, hide auth buttons
+    userMenu.style.display = "flex";
+    userMenu.querySelector(".user-name").textContent = currentUser.user.name || currentUser.user.email;
+    authButtons.style.display = "none";
+    
+    // Show sidebar
+    sidebar.style.display = "flex";
+  } else {
+    // Show auth buttons, hide user menu
+    userMenu.style.display = "none";
+    authButtons.style.display = "flex";
+    
+    // Still show sidebar for guests (optional - can hide if preferred)
+    sidebar.style.display = "flex";
   }
 
-  authLinks.forEach(el => {
+  // Update nav items visibility based on auth requirement
+  navItems.forEach(el => {
     const requiresAuth = el.getAttribute("data-auth") === "required";
     if (requiresAuth) {
-      el.style.display = currentUser ? "" : "none";
-    } else {
-      el.style.display = currentUser ? "none" : "";
+      el.style.display = (currentUser && currentUser.user) ? "" : "none";
     }
   });
 }
@@ -69,7 +80,7 @@ async function handleLogout() {
   currentUser = null;
   updateAuthUI();
   if (window.router) {
-    window.router.navigate("/login");
+    window.router.navigate("/convert");
   }
   const loggedOutText = window.i18n ? window.i18n.t("success.loggedOut") : "تم تسجيل الخروج بنجاح";
   showToast(loggedOutText, "success");
@@ -124,17 +135,33 @@ async function render404Page() {
 }
 
 function initSidebar() {
-  const toggle = document.getElementById("sidebarToggle");
+  // Toggle button in sidebar
+  const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
   const saved = localStorage.getItem("sidebarCollapsed");
+  
   if (saved === "true") {
-    document.body.classList.add("sidebar-collapsed");
+    document.getElementById("sidebar")?.classList.add("collapsed");
   }
-  toggle?.addEventListener("click", toggleSidebar);
+  
+  sidebarToggleBtn?.addEventListener("click", () => {
+    const sidebar = document.getElementById("sidebar");
+    sidebar?.classList.toggle("collapsed");
+    const collapsed = sidebar?.classList.contains("collapsed");
+    localStorage.setItem("sidebarCollapsed", collapsed);
+  });
+  
+  // Mobile hamburger menu
+  const mobileToggle = document.getElementById("sidebarToggle");
+  mobileToggle?.addEventListener("click", () => {
+    const sidebar = document.getElementById("sidebar");
+    sidebar?.classList.toggle("open");
+  });
 }
 
 function toggleSidebar() {
-  document.body.classList.toggle("sidebar-collapsed");
-  const collapsed = document.body.classList.contains("sidebar-collapsed");
+  const sidebar = document.getElementById("sidebar");
+  sidebar?.classList.toggle("collapsed");
+  const collapsed = sidebar?.classList.contains("collapsed");
   localStorage.setItem("sidebarCollapsed", collapsed);
 }
 

@@ -19,13 +19,16 @@ class Router {
     window.scrollTo(0, 0);
     this.updateNav(path);
 
-    const route = this.routes.get(path);
+    const handler = this.routes.get(path);
 
-    if (route) {
-      const result = await route.handler();
+    if (handler) {
+      const result = await handler();
       if (result === false) return;
     } else {
-      await this.routes.get('/404').handler();
+      const notFoundHandler = this.routes.get('/404');
+      if (notFoundHandler) {
+        await notFoundHandler();
+      }
     }
   }
 
