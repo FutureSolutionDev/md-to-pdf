@@ -298,9 +298,10 @@
     `).join('');
 
     tbody.querySelectorAll('[data-download]').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
         const id = btn.getAttribute('data-download');
-        window.open(`/api/files/${id}/download`, '_blank');
+        window.api.downloadFile(id);
       });
     });
 

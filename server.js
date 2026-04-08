@@ -342,8 +342,8 @@ app.use("*", async (c) => {
   const path = c.req.path;
   const method = c.req.method;
   
-  // Don't handle these routes at all - let them 404 or be handled elsewhere
-  if (path.startsWith("/api/") || path.startsWith("/health")) {
+  // Don't handle these routes - let them be handled by their specific handlers
+  if (path.startsWith("/api/") || path.startsWith("/health") || path.startsWith("/download/") || path.startsWith("/stream/")) {
     return c.text("Not Found", 404);
   }
   
