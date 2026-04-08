@@ -138,13 +138,16 @@
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   @media (max-width: 480px) {
     .auth-card {
       padding: 24px;
     }
+
     .auth-header h1 {
       font-size: 1.5rem;
     }
@@ -160,28 +163,14 @@
   <form id="loginForm" class="auth-form">
     <div class="form-group">
       <label for="loginEmail" class="form-label" data-i18n="auth.email">البريد الإلكتروني</label>
-      <input
-        type="email"
-        id="loginEmail"
-        name="email"
-        class="form-input"
-        required
-        autocomplete="email"
-        placeholder="أدخل بريدك الإلكتروني"
-      >
+      <input type="email" id="loginEmail" name="email" class="form-input" required autocomplete="email"
+        placeholder="أدخل بريدك الإلكتروني">
     </div>
 
     <div class="form-group">
       <label for="loginPassword" class="form-label" data-i18n="auth.password">كلمة المرور</label>
-      <input
-        type="password"
-        id="loginPassword"
-        name="password"
-        class="form-input"
-        required
-        autocomplete="current-password"
-        placeholder="أدخل كلمة المرور"
-      >
+      <input type="password" id="loginPassword" name="password" class="form-input" required
+        autocomplete="current-password" placeholder="أدخل كلمة المرور">
     </div>
 
     <div class="error-message" id="loginError"></div>
@@ -197,15 +186,20 @@
   </div>
 </div>
 
-<script type="module">
+<script>
   function initLogin() {
+    alert('initLogin called');
+    console.log('initLogin started');
     const form = document.getElementById('loginForm');
     const emailInput = document.getElementById('loginEmail');
     const passwordInput = document.getElementById('loginPassword');
     const errorEl = document.getElementById('loginError');
     const submitBtn = document.getElementById('loginSubmitBtn');
 
-    if (!form) return;
+    if (!form) {
+      alert('Form not found!');
+      return;
+    }
 
     function showError(msg) {
       errorEl.textContent = msg;
@@ -225,13 +219,17 @@
         submitBtn.textContent = t;
       }
     }
-
-    form.addEventListener('submit', async (e) => {
+    const HandleLogin = async (e) => {
       e.preventDefault();
       hideError();
 
       const email = emailInput.value.trim();
       const password = passwordInput.value;
+      console.log({
+        email,
+        password
+      })
+      return;
 
       if (!email) {
         showError(window.i18n ? window.i18n.t('error.email_invalid') : 'البريد الإلكتروني مطلوب');
@@ -249,13 +247,13 @@
 
       try {
         const result = await window.api.login(email, password);
+        console.log("Login success: ", result);
 
         if (result.user) {
           window.currentUser = result;
           window.updateAuthUI();
-          window.router.navigate('/convert');
-          const msg = window.i18n ? window.i18n.t('success.login') : 'تم تسجيل الدخول';
-          window.showToast(msg, 'success');
+          // Navigate to convert page using full page reload
+          // window.location.href = '/convert';
         } else {
           showError(result.error || (window.i18n ? window.i18n.t('error.login_failed') : 'فشل تسجيل الدخول'));
         }
@@ -271,7 +269,9 @@
       } finally {
         setLoading(false);
       }
-    });
+
+    }
+    form.addEventListener('submit', HandleLogin);
 
     emailInput.addEventListener('input', () => {
       emailInput.classList.remove('error');

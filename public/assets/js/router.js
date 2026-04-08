@@ -50,10 +50,35 @@ class Router {
       const html = await res.text();
       const app = document.getElementById('app');
       if (app) {
-        app.innerHTML = html;
-        const script = document.createElement('script');
-        script.textContent = `if (typeof init${this.capitalize(page)} === 'function') init${this.capitalize(page)}();`;
-        app.appendChild(script);
+        // Extract scripts and inline them
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // Get all scripts
+        const scripts = [];
+        tempDiv.querySelectorAll('script').forEach(script => {
+          scripts.push(script.textContent);
+          script.remove();
+        });
+        
+        // Set the HTML without scripts
+        app.innerHTML = tempDiv.innerHTML;
+        console.log('HTML set, executing scripts...');
+        
+        // Execute scripts
+        scripts.forEach(scriptText => {
+          if (scriptText && scriptText.trim()) {
+            console.log('Executing script:', scriptText.substring(0, 100));
+            try {
+              eval(scriptText);
+              console.log('Script executed successfully');
+            } catch (err) {
+              console.error('Script error:', err);
+            }
+          }
+        });
+        
+        console.log('Page loaded:', page);
       }
     } catch (err) {
       console.error('Failed to load page:', err);

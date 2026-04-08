@@ -213,8 +213,10 @@
   </div>
 </div>
 
-<script type="module">
+<script>
   function initRegister() {
+    console.log('initRegister called');
+    alert('initRegister started');
     const form = document.getElementById('registerForm');
     const submitBtn = document.getElementById('registerSubmitBtn');
     const errorEl = document.getElementById('registerError');
@@ -229,7 +231,10 @@
     const passwordError = document.getElementById('regPasswordError');
     const confirmError = document.getElementById('regConfirmError');
 
-    if (!form) return;
+    if (!form) {
+      alert('Form not found!');
+      return;
+    }
 
     function showFieldError(input, errorDiv) {
       input.classList.add('error');
@@ -265,6 +270,8 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      e.stopPropagation();
+      console.log('Submit prevented');
       hideAllErrors();
 
       const name = nameInput.value.trim();
@@ -301,9 +308,8 @@
         if (result.user) {
           window.currentUser = result;
           window.updateAuthUI();
-          window.router.navigate('/convert');
-          const msg = window.i18n ? window.i18n.t('success.register') : 'تم إنشاء الحساب';
-          window.showToast(msg, 'success');
+          // Navigate to convert page
+          window.location.href = '/convert';
         } else {
           errorEl.textContent = result.error || (window.i18n ? window.i18n.t('error.unknown') : 'حدث خطأ');
           errorEl.classList.add('show');

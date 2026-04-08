@@ -54,6 +54,7 @@ const api = {
   },
 
   async login(email, password) {
+    console.log("api.login called", email, password);
     return this.post("/api/auth/login", { email, password });
   },
 
