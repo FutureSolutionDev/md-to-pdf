@@ -127,7 +127,8 @@ app.get("/api/files/:id/download", async (c) => {
   return new Response(fileData, {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(file.original_name)}`
+      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(file.original_name)}`,
+      "Content-Length": String(file.file_size ?? fileData.byteLength)
     }
   });
 });

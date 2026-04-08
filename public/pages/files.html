@@ -88,6 +88,51 @@
     gap: 8px;
   }
 
+  .download-cell {
+    min-width: 220px;
+  }
+
+  .download-progress {
+    display: none;
+    min-width: 180px;
+  }
+
+  .download-progress.active {
+    display: block;
+  }
+
+  .download-progress[hidden] {
+    display: none !important;
+  }
+
+  .download-progress-bar {
+    height: 6px;
+  }
+
+  .download-progress-fill.is-indeterminate {
+    width: 35% !important;
+    animation: progress-gradient 2s linear infinite, download-progress-indeterminate 1.2s ease-in-out infinite;
+  }
+
+  .download-progress-text {
+    margin-top: 6px;
+    font-size: 0.75rem;
+  }
+
+  @keyframes download-progress-indeterminate {
+    0% {
+      transform: translateX(0);
+    }
+
+    50% {
+      transform: translateX(140%);
+    }
+
+    100% {
+      transform: translateX(0);
+    }
+  }
+
   .btn-danger {
     background: rgba(239, 68, 68, 0.1);
     color: var(--error);
@@ -224,6 +269,15 @@
 <script type="module">
   let filesData = [];
   let fileToDelete = null;
+  const activeDownloads = new Set();
+
+  function t(key, params = {}) {
+    return window.i18n ? window.i18n.t(key, params) : key;
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
   function formatSize(bytes) {
     if (!bytes || bytes === 0) return '0 B';
@@ -255,6 +309,107 @@
     return div.innerHTML;
   }
 
+  function getRowElements(fileId) {
+    const row = document.querySelector(`[data-file-id="${fileId}"]`);
+    if (!row) return {};
+
+    return {
+      row,
+      actions: row.querySelector('[data-row-actions]'),
+      progress: row.querySelector('[data-row-progress]'),
+      fill: row.querySelector('[data-download-fill]'),
+      status: row.querySelector('[data-download-status]'),
+      percent: row.querySelector('[data-download-percent]')
+    };
+  }
+
+  function setRowDownloading(fileId, isDownloading) {
+    const { row, actions, progress } = getRowElements(fileId);
+    if (!row) return;
+
+    if (actions) {
+      actions.style.display = isDownloading ? 'none' : '';
+    }
+
+    if (progress) {
+      progress.hidden = !isDownloading;
+      progress.classList.toggle('active', isDownloading);
+    }
+
+    row.setAttribute('aria-busy', isDownloading ? 'true' : 'false');
+  }
+
+  function updateRowDownloadProgress(fileId, progress) {
+    const { fill, status, percent } = getRowElements(fileId);
+    if (!fill || !status || !percent) return;
+
+    const value = Number.isFinite(progress.percent)
+      ? Math.max(0, Math.min(100, Math.round(progress.percent)))
+      : 0;
+
+    fill.classList.toggle('is-indeterminate', Boolean(progress.indeterminate));
+    fill.style.width = progress.indeterminate ? '35%' : `${value}%`;
+    status.textContent = progress.status || t('files.downloading');
+    percent.textContent = progress.indeterminate
+      ? formatSize(progress.loaded)
+      : t('progress.percent', { percent: value });
+  }
+
+  function restoreRowActions(fileId) {
+    const { fill, status, percent } = getRowElements(fileId);
+
+    if (fill) {
+      fill.classList.remove('is-indeterminate');
+      fill.style.width = '0%';
+    }
+
+    if (status) {
+      status.textContent = t('files.downloading');
+    }
+
+    if (percent) {
+      percent.textContent = t('progress.percent', { percent: 0 });
+    }
+
+    setRowDownloading(fileId, false);
+  }
+
+  async function handleFileDownload(file) {
+    if (!file || activeDownloads.has(file.id)) return;
+
+    activeDownloads.add(file.id);
+    setRowDownloading(file.id, true);
+    updateRowDownloadProgress(file.id, {
+      loaded: 0,
+      total: file.file_size || null,
+      percent: 0,
+      indeterminate: !Boolean(file.file_size)
+    });
+
+    try {
+      const result = await window.api.downloadFile(file.id, {
+        fileName: file.original_name,
+        onProgress: (progress) => updateRowDownloadProgress(file.id, progress)
+      });
+
+      updateRowDownloadProgress(file.id, {
+        loaded: result.size,
+        total: result.size,
+        percent: 100,
+        indeterminate: false,
+        status: t('progress.done')
+      });
+
+      await sleep(350);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('error.unknown');
+      window.showToast(message || t('error.unknown'), 'error');
+    } finally {
+      restoreRowActions(file.id);
+      activeDownloads.delete(file.id);
+    }
+  }
+
   function renderFiles() {
     const loadingEl = document.getElementById('filesLoading');
     const emptyEl = document.getElementById('emptyState');
@@ -272,10 +427,8 @@
     emptyEl.style.display = 'none';
     tableEl.style.display = 'block';
 
-    const t = (key) => window.i18n ? window.i18n.t(key) : key;
-
     tbody.innerHTML = filesData.map(file => `
-      <tr>
+      <tr data-file-id="${file.id}">
         <td>
           <div class="file-name-cell">
             <span>📄</span>
@@ -284,14 +437,23 @@
         </td>
         <td>${formatDate(file.created_at)}</td>
         <td>${formatSize(file.file_size)}</td>
-        <td>
-          <div class="file-actions">
+        <td class="download-cell">
+          <div class="file-actions" data-row-actions>
             <button class="btn btn-sm btn-secondary" data-download="${file.id}" title="${t('files.download')}">
               ${t('files.download')}
             </button>
             <button class="btn btn-sm btn-danger" data-delete="${file.id}" title="${t('files.delete')}">
               ${t('files.delete')}
             </button>
+          </div>
+          <div class="download-progress" data-row-progress hidden aria-live="polite">
+            <div class="progress-bar download-progress-bar">
+              <div class="progress-fill download-progress-fill" data-download-fill style="width: 0%;"></div>
+            </div>
+            <div class="progress-text download-progress-text">
+              <span data-download-status>${t('files.downloading')}</span>
+              <span data-download-percent>${t('progress.percent', { percent: 0 })}</span>
+            </div>
           </div>
         </td>
       </tr>
@@ -301,7 +463,8 @@
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         const id = btn.getAttribute('data-download');
-        window.api.downloadFile(id);
+        const file = filesData.find(item => item.id === id);
+        handleFileDownload(file);
       });
     });
 

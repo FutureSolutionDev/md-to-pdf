@@ -83,6 +83,7 @@
   "files.last_modified": "آخر تعديل: {date}",
   "files.size": "الحجم: {size}",
   "files.download": "تحميل",
+  "files.downloading": "جاري التحميل...",
   "files.delete": "حذف",
   "files.delete_confirm": "هل أنت متأكد من حذف هذا الملف؟",
   "files.delete_success": "تم حذف الملف بنجاح",

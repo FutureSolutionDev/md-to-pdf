@@ -83,6 +83,7 @@
   "files.last_modified": "Last modified: {date}",
   "files.size": "Size: {size}",
   "files.download": "Download",
+  "files.downloading": "Downloading...",
   "files.delete": "Delete",
   "files.delete_confirm": "Are you sure you want to delete this file?",
   "files.delete_success": "File deleted successfully",
