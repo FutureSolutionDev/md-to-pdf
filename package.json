@@ -4,10 +4,9 @@
   "description": "Convert Markdown to PDF",
   "scripts": {
     "start": "bun run server.js",
-    "dev": "bun run server.js"
+    "dev": "bun --watch run server.js"
   },
   "dependencies": {
-    "@sparticuz/chromium": "^143.0.4",
     "hono": "^4.7.5",
     "markdown-it": "^14.1.1",
     "markdown-it-anchor": "^9.2.0",
