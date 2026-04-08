@@ -1,12 +1,11 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { streamSSE } from "hono/streaming";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, existsSync } from "node:fs";
 import { unlink } from "node:fs/promises";
 import { extname, basename } from "node:path";
 import convert from "./convert";
-
-mkdirSync("uploads", { recursive: true });
+if (!existsSync("uploads")) mkdirSync("uploads", { recursive: true });
 
 const app = new Hono();
 const jobs = new Map();
@@ -35,8 +34,7 @@ app.post("/convert", async (c) => {
   const jobId = Date.now().toString();
   const mdPath = `uploads/${jobId}.md`;
   const pdfPath = `uploads/${jobId}.pdf`;
-  const originalName =
-    basename(file.name, extname(file.name)) + ".pdf";
+  const originalName = basename(file.name, extname(file.name)) + ".pdf";
 
   await Bun.write(mdPath, await file.arrayBuffer());
 
@@ -85,7 +83,9 @@ app.get("/stream/:jobId", (c) => {
       const job = jobs.get(jobId);
 
       if (!job) {
-        await stream.writeSSE({ data: JSON.stringify({ error: "Job not found" }) });
+        await stream.writeSSE({
+          data: JSON.stringify({ error: "Job not found" }),
+        });
         return;
       }
 
@@ -137,8 +137,8 @@ app.get("/download/:jobId", async (c) => {
 app.use("*", serveStatic({ root: "./public" }));
 
 const server = Bun.serve({
-  port: 3050,
+  port: process.env.PORT || 3050,
   fetch: app.fetch,
 });
-
 console.log(`🚀 Server running on http://localhost:${server.port}`);
+// md.futuresolutionsdev.com

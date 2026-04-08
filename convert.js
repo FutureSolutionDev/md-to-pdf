@@ -1,7 +1,8 @@
 import MarkdownIt from "markdown-it";
 import anchor from "markdown-it-anchor";
 import toc from "markdown-it-table-of-contents";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 
 async function convert(mdContent, pdfFile, onLog = () => {}) {
   onLog(10, "جاري تحليل الـ Markdown...");
@@ -231,7 +232,10 @@ ${htmlContent}
   onLog(50, "جاري تشغيل المتصفح...");
 
   const browser = await puppeteer.launch({
-    headless: true,
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless,
   });
 
   const page = await browser.newPage();

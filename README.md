@@ -11,6 +11,9 @@
 ![بعد التحويل](screenshots/success.png)
 
 ---
+# Demo
+
+[https://md.futuresolutionsdev.com](https://md.futuresolutionsdev.com/)
 
 ## المميزات
 
@@ -43,9 +46,12 @@ bun install
 
 # تشغيل السيرفر
 bun run start
+# Run With PM2
+pm2 start ecosystem.config.js
+
 ```
 
-افتح المتصفح على: `http://localhost:3050`
+افتح المتصفح على: `http://localhost:3050` او `https://example.com`
 
 ---
 
@@ -61,6 +67,7 @@ md-to-pdf/
 ├── screenshots/
 │   ├── main.png
 │   └── success.png
+├── ecosystem.config.js  # PM2 config
 └── package.json
 ```
 
