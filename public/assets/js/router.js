@@ -147,3 +147,11 @@ router.addRoute('/404', async () => {
 
 // Export for use in other scripts
 window.router = router;
+
+// Auto-init when router.js loads
+console.log('Router: Initializing...');
+router.init().then(() => {
+  console.log('Router: Initialized successfully');
+}).catch(err => {
+  console.error('Router: Init failed', err);
+});

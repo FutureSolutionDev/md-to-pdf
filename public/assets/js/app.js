@@ -4,27 +4,44 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (window.i18n) {
     await window.i18n.init();
   }
-  initRouter();
   initSidebar();
   initLangSwitcher();
   initToast();
   await checkAuth();
   updateAuthUI();
+  
+  // Router is already initialized in router.js
 });
 
-function initRouter() {
-  if (!window.router) {
-    console.error("Router not initialized");
-    return;
+function initSidebar() {
+  // Toggle button in sidebar
+  const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
+  const saved = localStorage.getItem("sidebarCollapsed");
+  
+  if (saved === "true") {
+    document.getElementById("sidebar")?.classList.add("collapsed");
   }
-  window.router.addRoute("/", () => window.router.navigate("/convert"));
-  window.router.addRoute("/convert", renderConvertPage);
-  window.router.addRoute("/files", renderFilesPage);
-  window.router.addRoute("/login", renderLoginPage);
-  window.router.addRoute("/register", renderRegisterPage);
-  window.router.addRoute("/404", render404Page);
+  
+  sidebarToggleBtn?.addEventListener("click", () => {
+    const sidebar = document.getElementById("sidebar");
+    sidebar?.classList.toggle("collapsed");
+    const collapsed = sidebar?.classList.contains("collapsed");
+    localStorage.setItem("sidebarCollapsed", collapsed);
+  });
+  
+  // Mobile hamburger menu
+  const mobileToggle = document.getElementById("sidebarToggle");
+  mobileToggle?.addEventListener("click", () => {
+    const sidebar = document.getElementById("sidebar");
+    sidebar?.classList.toggle("open");
+  });
+}
 
-  window.router.init();
+function toggleSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  sidebar?.classList.toggle("collapsed");
+  const collapsed = sidebar?.classList.contains("collapsed");
+  localStorage.setItem("sidebarCollapsed", collapsed);
 }
 
 async function checkAuth() {
