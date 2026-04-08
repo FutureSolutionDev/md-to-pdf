@@ -1,357 +1,342 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title data-i18n="auth.registerTitle">إنشاء حساب - MD → PDF</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link href="/assets/css/main.css" rel="stylesheet">
-  <style>
-    .auth-page {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      background: var(--bg);
-    }
+<style>
+  .auth-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    margin: 40px auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
 
+  .auth-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .auth-header .auth-icon {
+    width: 64px;
+    height: 64px;
+    background: var(--navy);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    color: var(--gold);
+    font-size: 1.75rem;
+  }
+
+  .auth-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+  }
+
+  .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 0.875rem;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.875rem;
+    transition: var(--transition);
+  }
+
+  .form-input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.1);
+  }
+
+  .form-input::placeholder {
+    color: var(--muted);
+  }
+
+  .form-input.error {
+    border-color: var(--error);
+  }
+
+  .form-error-text {
+    color: var(--error);
+    font-size: 0.75rem;
+    display: none;
+  }
+
+  .form-error-text.show {
+    display: block;
+  }
+
+  .error-message {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--error);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--error);
+    font-size: 0.875rem;
+    display: none;
+  }
+
+  .error-message.show {
+    display: block;
+  }
+
+  .btn-submit {
+    width: 100%;
+    padding: 14px 24px;
+    background: var(--navy);
+    color: var(--text);
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-submit:hover:not(:disabled) {
+    background: #2a4a73;
+  }
+
+  .btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .btn-submit .spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .auth-footer {
+    text-align: center;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+
+  .auth-footer a {
+    color: var(--gold);
+    font-weight: 600;
+    margin-right: 4px;
+  }
+
+  .auth-footer a:hover {
+    color: #d4af37;
+  }
+
+  @media (max-width: 480px) {
     .auth-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 40px;
-      width: 100%;
-      max-width: 420px;
+      padding: 24px;
     }
-
-    .auth-header {
-      text-align: center;
-      margin-bottom: 32px;
-    }
-
     .auth-header h1 {
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: var(--text);
-      margin: 0;
+      font-size: 1.5rem;
     }
+  }
+</style>
 
-    .auth-header .auth-icon {
-      width: 64px;
-      height: 64px;
-      background: var(--navy);
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 16px;
-      color: var(--gold);
-      font-size: 1.75rem;
-    }
-
-    .auth-form {
-      margin-bottom: 24px;
-    }
-
-    .auth-form .form-group {
-      margin-bottom: 20px;
-    }
-
-    .auth-form .form-label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: var(--text);
-      font-size: 0.875rem;
-    }
-
-    .auth-form .form-input {
-      width: 100%;
-      padding: 12px 16px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 0.875rem;
-      transition: var(--transition);
-    }
-
-    .auth-form .form-input:focus {
-      border-color: var(--gold);
-      box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.1);
-    }
-
-    .auth-form .form-input::placeholder {
-      color: var(--muted);
-    }
-
-    .auth-form .form-input.error {
-      border-color: var(--error);
-    }
-
-    .auth-form .form-error-text {
-      color: var(--error);
-      font-size: 0.75rem;
-      margin-top: 4px;
-      display: none;
-    }
-
-    .auth-form .form-error-text.show {
-      display: block;
-    }
-
-    .error-message {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid var(--error);
-      border-radius: 8px;
-      padding: 12px 16px;
-      color: var(--error);
-      font-size: 0.875rem;
-      margin-bottom: 20px;
-      display: none;
-    }
-
-    .error-message.show {
-      display: block;
-    }
-
-    .auth-form .btn-primary {
-      width: 100%;
-      padding: 14px 24px;
-      background: var(--navy);
-      color: var(--text);
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: var(--transition);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .auth-form .btn-primary:hover {
-      background: #2a4a73;
-    }
-
-    .auth-form .btn-primary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .auth-footer {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.875rem;
-    }
-
-    .auth-footer a {
-      color: var(--gold);
-      font-weight: 600;
-      margin-right: 4px;
-    }
-
-    .auth-footer a:hover {
-      color: #d4af37;
-    }
-
-    .spinner {
-      width: 20px;
-      height: 20px;
-      border: 2px solid var(--border);
-      border-top-color: var(--gold);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      display: none;
-    }
-
-    .loading .spinner {
-      display: inline-block;
-    }
-
-    .loading .btn-text {
-      display: none;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    @media (max-width: 480px) {
-      .auth-card {
-        padding: 24px;
-      }
-
-      .auth-header h1 {
-        font-size: 1.5rem;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="auth-page">
-    <div class="auth-card">
-      <div class="auth-header">
-        <div class="auth-icon">📝</div>
-        <h1 data-i18n="auth.register">إنشاء حساب</h1>
-      </div>
-
-      <form id="registerForm" class="auth-form" novalidate>
-        <div class="form-group">
-          <label for="name" class="form-label" data-i18n="auth.name">الاسم</label>
-          <input type="text" id="name" name="name" class="form-input" required minlength="2" placeholder data-i18n-placeholder="auth.namePlaceholder">
-          <div class="form-error-text" id="nameError" data-i18n="auth.nameRequired">الاسم مطلوب (minimum 2 characters)</div>
-        </div>
-
-        <div class="form-group">
-          <label for="email" class="form-label" data-i18n="auth.email">البريد الإلكتروني</label>
-          <input type="email" id="email" name="email" class="form-input" required placeholder data-i18n-placeholder="auth.emailPlaceholder">
-          <div class="form-error-text" id="emailError" data-i18n="auth.emailRequired">البريد الإلكتروني مطلوب</div>
-        </div>
-
-        <div class="form-group">
-          <label for="password" class="form-label" data-i18n="auth.password">كلمة المرور</label>
-          <input type="password" id="password" name="password" class="form-input" required minlength="6" placeholder data-i18n-placeholder="auth.passwordPlaceholder">
-          <div class="form-error-text" id="passwordError" data-i18n="auth.passwordRequired">كلمة المرور مطلوبة (minimum 6 characters)</div>
-        </div>
-
-        <div class="form-group">
-          <label for="confirmPassword" class="form-label" data-i18n="auth.confirmPassword">تأكيد كلمة المرور</label>
-          <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" required placeholder data-i18n-placeholder="auth.confirmPasswordPlaceholder">
-          <div class="form-error-text" id="confirmPasswordError" data-i18n="auth.passwordMismatch">كلمات المرور غير متطابقة</div>
-        </div>
-
-        <div class="error-message" id="errorMessage"></div>
-
-        <button type="submit" class="btn-primary" id="submitBtn">
-          <span class="spinner"></span>
-          <span class="btn-text" data-i18n="btn.register">إنشاء حساب</span>
-        </button>
-      </form>
-
-      <div class="auth-footer">
-        <span data-i18n="auth.haveAccount">لديك حساب؟</span>
-        <a href="/pages/login.html" data-i18n="auth.login">تسجيل دخول</a>
-      </div>
-    </div>
+<div class="auth-card">
+  <div class="auth-header">
+    <div class="auth-icon">📝</div>
+    <h1 data-i18n="auth.register">إنشاء حساب</h1>
   </div>
 
-  <script src="/assets/js/i18n.js"></script>
-  <script>
-    (async function() {
-      await i18n.init();
+  <form id="registerForm" class="auth-form" novalidate>
+    <div class="form-group">
+      <label for="regName" class="form-label" data-i18n="auth.name">الاسم</label>
+      <input type="text" id="regName" name="name" class="form-input" required minlength="2" placeholder="أدخل اسمك">
+      <div class="form-error-text" id="regNameError" data-i18n="error.name_required">الاسم مطلوب (حرفين على الأقل)</div>
+    </div>
 
-      const form = document.getElementById("registerForm");
-      const submitBtn = document.getElementById("submitBtn");
-      const errorMessage = document.getElementById("errorMessage");
+    <div class="form-group">
+      <label for="regEmail" class="form-label" data-i18n="auth.email">البريد الإلكتروني</label>
+      <input type="email" id="regEmail" name="email" class="form-input" required placeholder="أدخل بريدك الإلكتروني">
+      <div class="form-error-text" id="regEmailError" data-i18n="error.email_invalid">البريد الإلكتروني غير صالح</div>
+    </div>
 
-      const nameInput = document.getElementById("name");
-      const emailInput = document.getElementById("email");
-      const passwordInput = document.getElementById("password");
-      const confirmPasswordInput = document.getElementById("confirmPassword");
+    <div class="form-group">
+      <label for="regPassword" class="form-label" data-i18n="auth.password">كلمة المرور</label>
+      <input type="password" id="regPassword" name="password" class="form-input" required minlength="6" placeholder="أدخل كلمة المرور">
+      <div class="form-error-text" id="regPasswordError" data-i18n="error.password_short">كلمة المرور قصيرة جداً (6 أحرف على الأقل)</div>
+    </div>
 
-      const nameError = document.getElementById("nameError");
-      const emailError = document.getElementById("emailError");
-      const passwordError = document.getElementById("passwordError");
-      const confirmPasswordError = document.getElementById("confirmPasswordError");
+    <div class="form-group">
+      <label for="regConfirmPassword" class="form-label" data-i18n="auth.confirm_password">تأكيد كلمة المرور</label>
+      <input type="password" id="regConfirmPassword" name="confirmPassword" class="form-input" required placeholder="أعد إدخال كلمة المرور">
+      <div class="form-error-text" id="regConfirmError" data-i18n="error.password_mismatch">كلمات المرور غير متطابقة</div>
+    </div>
 
-      function showError(input, errorEl, message) {
-        input.classList.add("error");
-        if (message) {
-          errorEl.textContent = message;
-          errorEl.setAttribute("data-i18n", message);
-        }
-        errorEl.classList.add("show");
+    <div class="error-message" id="registerError"></div>
+
+    <button type="submit" class="btn-submit" id="registerSubmitBtn">
+      <span class="btn-text" data-i18n="auth.register">إنشاء حساب</span>
+    </button>
+  </form>
+
+  <div class="auth-footer">
+    <span data-i18n="auth.have_account">لديك حساب؟</span>
+    <a href="/login" data-link data-i18n="auth.login">تسجيل دخول</a>
+  </div>
+</div>
+
+<script type="module">
+  function initRegister() {
+    const form = document.getElementById('registerForm');
+    const submitBtn = document.getElementById('registerSubmitBtn');
+    const errorEl = document.getElementById('registerError');
+
+    const nameInput = document.getElementById('regName');
+    const emailInput = document.getElementById('regEmail');
+    const passwordInput = document.getElementById('regPassword');
+    const confirmInput = document.getElementById('regConfirmPassword');
+
+    const nameError = document.getElementById('regNameError');
+    const emailError = document.getElementById('regEmailError');
+    const passwordError = document.getElementById('regPasswordError');
+    const confirmError = document.getElementById('regConfirmError');
+
+    if (!form) return;
+
+    function showFieldError(input, errorDiv) {
+      input.classList.add('error');
+      errorDiv.classList.add('show');
+    }
+
+    function hideFieldError(input, errorDiv) {
+      input.classList.remove('error');
+      errorDiv.classList.remove('show');
+    }
+
+    function hideAllErrors() {
+      hideFieldError(nameInput, nameError);
+      hideFieldError(emailInput, emailError);
+      hideFieldError(passwordInput, passwordError);
+      hideFieldError(confirmInput, confirmError);
+      errorEl.classList.remove('show');
+    }
+
+    function setLoading(loading) {
+      submitBtn.disabled = loading;
+      if (loading) {
+        submitBtn.innerHTML = '<span class="spinner"></span>';
+      } else {
+        const t = window.i18n ? window.i18n.t('auth.register') : 'إنشاء حساب';
+        submitBtn.innerHTML = `<span class="btn-text">${t}</span>`;
+      }
+    }
+
+    function validateEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAllErrors();
+
+      const name = nameInput.value.trim();
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      const confirm = confirmInput.value;
+
+      let hasError = false;
+
+      if (!name || name.length < 2) {
+        showFieldError(nameInput, nameError);
+        hasError = true;
+      }
+      if (!email || !validateEmail(email)) {
+        showFieldError(emailInput, emailError);
+        hasError = true;
+      }
+      if (!password || password.length < 6) {
+        showFieldError(passwordInput, passwordError);
+        hasError = true;
+      }
+      if (password !== confirm) {
+        showFieldError(confirmInput, confirmError);
+        hasError = true;
       }
 
-      function hideError(input, errorEl) {
-        input.classList.remove("error");
-        errorEl.classList.remove("show");
-      }
+      if (hasError) return;
 
-      function hideAllErrors() {
-        hideError(nameInput, nameError);
-        hideError(emailInput, emailError);
-        hideError(passwordInput, passwordError);
-        hideError(confirmPasswordInput, confirmPasswordError);
-        errorMessage.classList.remove("show");
-      }
+      setLoading(true);
 
-      function validateEmail(email) {
-        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return re.test(email);
-      }
+      try {
+        const result = await window.api.register(name, email, password);
 
-      form.addEventListener("submit", async function(e) {
-        e.preventDefault();
-        hideAllErrors();
-
-        const name = nameInput.value.trim();
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
-        const confirmPassword = confirmPasswordInput.value;
-
-        let hasError = false;
-
-        if (!name || name.length < 2) {
-          showError(nameInput, nameError);
-          hasError = true;
+        if (result.user) {
+          window.currentUser = result;
+          window.updateAuthUI();
+          window.router.navigate('/convert');
+          const msg = window.i18n ? window.i18n.t('success.register') : 'تم إنشاء الحساب';
+          window.showToast(msg, 'success');
+        } else {
+          errorEl.textContent = result.error || (window.i18n ? window.i18n.t('error.unknown') : 'حدث خطأ');
+          errorEl.classList.add('show');
         }
-
-        if (!email || !validateEmail(email)) {
-          showError(emailInput, emailError);
-          hasError = true;
-        }
-
-        if (!password || password.length < 6) {
-          showError(passwordInput, passwordError);
-          hasError = true;
-        }
-
-        if (password !== confirmPassword) {
-          showError(confirmPasswordInput, confirmPasswordError);
-          hasError = true;
-        }
-
-        if (hasError) return;
-
-        submitBtn.classList.add("loading");
-        submitBtn.disabled = true;
-
+      } catch (err) {
+        let msg;
         try {
-          const res = await fetch("/api/auth/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "same-origin",
-            body: JSON.stringify({ name, email, password })
-          });
-
-          const data = await res.json();
-
-          if (!res.ok) {
-            throw new Error(data.message || data.error || "Registration failed");
-          }
-
-          window.location.href = "/pages/login.html";
-        } catch (err) {
-          console.error("Registration error:", err);
-          errorMessage.textContent = err.message || i18n.t("auth.registerError");
-          errorMessage.classList.add("show");
-        } finally {
-          submitBtn.classList.remove("loading");
-          submitBtn.disabled = false;
+          const parsed = JSON.parse(err.message);
+          msg = parsed.error;
+        } catch {
+          msg = err.message;
         }
-      });
+        errorEl.textContent = msg || (window.i18n ? window.i18n.t('error.unknown') : 'حدث خطأ');
+        errorEl.classList.add('show');
+      } finally {
+        setLoading(false);
+      }
+    });
 
-      [nameInput, emailInput, passwordInput, confirmPasswordInput].forEach(input => {
-        input.addEventListener("input", function() {
-          hideError(this, this.nextElementSibling);
-        });
+    [nameInput, emailInput, passwordInput, confirmInput].forEach((input) => {
+      input.addEventListener('input', () => {
+        const errorDiv = input.nextElementSibling;
+        if (errorDiv && errorDiv.classList.contains('form-error-text')) {
+          hideFieldError(input, errorDiv);
+        }
+        errorEl.classList.remove('show');
       });
-    })();
-  </script>
-</body>
-</html>
+    });
+
+    if (window.i18n) {
+      window.i18n.updateDOM();
+    }
+  }
+
+  window.initRegister = initRegister;
+</script>

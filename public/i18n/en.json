@@ -21,6 +21,7 @@
   "auth.logged_in_as": "Logged in as",
   "auth.remember_me": "Remember me",
   "auth.forgot_password": "Forgot password?",
+  "auth.loginSubtitle": "Sign in to continue",
   "auth.no_account": "Don't have an account?",
   "auth.have_account": "Already have an account?",
   "auth.create_account": "Create Account",
@@ -94,6 +95,7 @@
   "settings.delete_account": "Delete Account",
   "settings.export_data": "Export Data",
 
+  "ui.collapse": "Collapse",
   "ui.btn.convert": "Convert to PDF",
   "ui.btn.download": "Download",
   "ui.btn.save": "Save",
@@ -123,6 +125,7 @@
   "error.server": "Server error. Please try again later",
   "error.login_failed": "Invalid email or password",
   "error.email_exists": "This email is already registered",
+  "error.name_required": "Name is required (at least 2 characters)",
   "error.email_invalid": "Please enter a valid email address",
   "error.password_too_short": "Password must be at least 8 characters",
   "error.password_mismatch": "Passwords do not match",

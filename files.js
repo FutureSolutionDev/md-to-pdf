@@ -1,6 +1,7 @@
 import db from "./db.js";
-import { existsSync, mkdirSync, unlink, copyFileSync, statSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { existsSync, mkdirSync, copyFileSync, statSync } from "node:fs";
+import { unlink } from "node:fs/promises";
+import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 
 const MAX_FILES_PER_USER = 20;
@@ -80,19 +81,19 @@ export function getFile(fileId, userId) {
   return stmt.get(fileId, userId);
 }
 
-export function deleteFile(fileId, userId) {
+export async function deleteFile(fileId, userId) {
   const file = getFile(fileId, userId);
-  
+
   if (!file) {
     throw new Error("File not found or access denied.");
   }
-  
+
   if (existsSync(file.pdf_path)) {
-    unlink(file.pdf_path);
+    await unlink(file.pdf_path);
   }
-  
+
   db.run("DELETE FROM files WHERE id = ?", [fileId]);
-  
+
   return true;
 }
 

@@ -67,7 +67,7 @@
       </div>
     </div>
 
-    <div class="result-actions" id="resultActions" style="display: none; margin-top: 20px; display: flex; gap: 12px;">
+    <div class="result-actions" id="resultActions" style="display: none; margin-top: 20px; gap: 12px;">
       <button class="btn btn-gold" id="downloadBtn" style="flex: 1;" data-i18n="btn.download">
         تحميل PDF
       </button>
@@ -240,62 +240,36 @@
 
   async function startProgressStream(jobId) {
     const eventSource = new EventSource(`/stream/${jobId}`);
-    
+
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        
-        if (data.type === 'progress') {
-          updateProgress(data.percent, data.message);
-          addTerminalLog(data.message);
-        } else if (data.type === 'complete') {
+
+        if (data.done) {
           updateProgress(100, 'اكتمل');
           addTerminalLog('Conversion complete!');
           showDownloadButton();
           eventSource.close();
-        } else if (data.type === 'error') {
+        } else if (data.error) {
           addTerminalLog(`Error: ${data.message}`, 'error');
           showError('خطأ', data.message);
+          document.getElementById('newConversionBtn').style.display = 'inline-flex';
           eventSource.close();
+        } else if (data.percent !== undefined) {
+          updateProgress(data.percent, data.message);
+          addTerminalLog(data.message);
         }
       } catch (err) {
         console.error('SSE parse error:', err);
       }
     };
-    
-    eventSource.onerror = (err) => {
-      addTerminalLog('Connection error, trying fallback...', 'error');
-      eventSource.close();
-      pollForResult(jobId);
-    };
-  }
 
-  async function pollForResult(jobId) {
-    const maxAttempts = 30;
-    let attempts = 0;
-    
-    const poll = async () => {
-      try {
-        const res = await fetch(`/status/${jobId}`, { credentials: 'same-origin' });
-        const data = await res.json();
-        
-        if (data.status === 'complete') {
-          updateProgress(100, 'اكتمل');
-          addTerminalLog('Conversion complete!');
-          showDownloadButton();
-        } else if (data.status === 'failed') {
-          addTerminalLog(`Error: ${data.error}`, 'error');
-          showError('خطأ', data.error);
-        } else if (attempts < maxAttempts) {
-          attempts++;
-          setTimeout(poll, 1000);
-        }
-      } catch (err) {
-        console.error('Poll error:', err);
-      }
+    eventSource.onerror = () => {
+      addTerminalLog('Connection lost', 'error');
+      showError('خطأ', 'انقطع الاتصال بالسيرفر');
+      document.getElementById('newConversionBtn').style.display = 'inline-flex';
+      eventSource.close();
     };
-    
-    poll();
   }
 
   function showDownloadButton() {

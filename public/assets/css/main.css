@@ -305,24 +305,6 @@ ul, ol {
   gap: 10px;
 }
 
-.btn {
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.875rem;
-  text-decoration: none;
-  transition: var(--transition);
-}
-
-.btn-primary {
-  background: var(--navy);
-  color: #fff;
-}
-
-.btn-primary:hover {
-  background: #2e5c99;
-}
-
 .btn-outline {
   background: transparent;
   color: var(--muted);
@@ -334,20 +316,10 @@ ul, ol {
   color: var(--gold);
 }
 
-.btn-sm {
-  padding: 6px 12px;
-  font-size: 0.8rem;
-}
-
 .user-menu {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.user-name {
-  color: var(--text);
-  font-weight: 500;
 }
 
 @media (max-width: 768px) {
@@ -362,8 +334,6 @@ ul, ol {
   .auth-buttons {
     display: none;
   }
-}
-  transition: var(--transition);
 }
 
 .user-menu:hover {

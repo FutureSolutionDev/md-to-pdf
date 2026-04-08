@@ -31,21 +31,11 @@ setInterval(() => {
 }, CLEANUP_INTERVAL);
 
 app.onError((err, c) => {
-  console.error("[Server Error]", err.message, err.stack);
-  return c.json({ error: err.message, details: err.stack }, 500);
+  console.error("[Server Error]", err.message);
+  return c.json({ error: "Internal server error" }, 500);
 });
 
 app.get("/health", (c) => c.json({ status: "ok" }));
-
-app.get("/debug", (c) => {
-  try {
-    const sessionToken = c.req.cookie("session");
-    const user = sessionToken ? auth.verifySession(sessionToken) : null;
-    return c.json({ cookie: sessionToken || "none", user: user || null });
-  } catch (err) {
-    return c.json({ error: err.message, stack: err.stack }, 500);
-  }
-});
 
 // Auth middleware - reads session cookie for all /api/* routes
 app.use("/api/*", async (c, next) => {
@@ -142,13 +132,13 @@ app.get("/api/files/:id/download", async (c) => {
   });
 });
 
-app.delete("/api/files/:id", (c) => {
+app.delete("/api/files/:id", async (c) => {
   const user = c.get("user");
   if (!user) return c.json({ error: "Unauthorized" }, 401);
 
   const fileId = c.req.param("id");
   try {
-    files.deleteFile(fileId, user.id);
+    await files.deleteFile(fileId, user.id);
     return c.json({ ok: true });
   } catch (err) {
     return c.json({ error: err.message }, 400);

@@ -161,3 +161,8 @@ export const cookieOptions = {
   path: "/",
   maxAge: 604800
 };
+
+// Cleanup expired sessions every 30 minutes
+setInterval(() => {
+  db.run("DELETE FROM sessions WHERE expires_at < datetime('now')");
+}, 30 * 60 * 1000);
