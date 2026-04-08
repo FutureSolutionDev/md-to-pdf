@@ -1,0 +1,545 @@
+<style>
+  .files-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .files-page .page-header {
+    margin-bottom: 24px;
+  }
+
+  .files-page .page-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .storage-indicator {
+    color: var(--muted);
+    font-size: 0.875rem;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--muted);
+  }
+
+  .empty-state svg {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+    color: var(--muted);
+  }
+
+  .empty-state h3 {
+    font-size: 1.125rem;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .table-container {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .table th {
+    text-align: right;
+    padding: 12px 16px;
+    background: var(--bg);
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.875rem;
+    color: var(--text);
+  }
+
+  .table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .file-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .file-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .download-cell {
+    min-width: 220px;
+  }
+
+  .download-progress {
+    display: none;
+    min-width: 180px;
+  }
+
+  .download-progress.active {
+    display: block;
+  }
+
+  .download-progress[hidden] {
+    display: none !important;
+  }
+
+  .download-progress-bar {
+    height: 6px;
+  }
+
+  .download-progress-fill.is-indeterminate {
+    width: 35% !important;
+    animation: progress-gradient 2s linear infinite, download-progress-indeterminate 1.2s ease-in-out infinite;
+  }
+
+  .download-progress-text {
+    margin-top: 6px;
+    font-size: 0.75rem;
+  }
+
+  @keyframes download-progress-indeterminate {
+    0% {
+      transform: translateX(0);
+    }
+
+    50% {
+      transform: translateX(140%);
+    }
+
+    100% {
+      transform: translateX(0);
+    }
+  }
+
+  .btn-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--error);
+    border: 1px solid var(--error);
+  }
+
+  .btn-danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+  }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open {
+    display: flex;
+  }
+
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 420px;
+    width: 90%;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .modal-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .modal-close {
+    background: transparent;
+    color: var(--muted);
+    padding: 4px;
+    cursor: pointer;
+    border: none;
+    font-size: 1.25rem;
+  }
+
+  .modal-body {
+    color: var(--muted);
+    margin-bottom: 24px;
+    font-size: 0.875rem;
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+  }
+
+  @media (max-width: 640px) {
+    .table th:nth-child(3),
+    .table td:nth-child(3) {
+      display: none;
+    }
+  }
+</style>
+
+<div class="files-page">
+  <div class="page-header">
+    <h1 data-i18n="files.title">ملفاتي</h1>
+    <div class="storage-indicator">
+      <span>
+        <span data-i18n="files.storage_used">المساحة المستخدمة</span>:
+        <span id="storageUsed">0 MB</span> / <span id="storageLimit">100 MB</span>
+      </span>
+      <span>
+        <span data-i18n="files.file_count">الملفات</span>:
+        <span id="fileCount">0</span> / <span id="fileLimit">20</span>
+      </span>
+    </div>
+  </div>
+
+  <div class="files-list" id="filesList">
+    <div class="loading" id="filesLoading" data-i18n="app.loading">جاري التحميل...</div>
+
+    <div class="empty-state" id="emptyState" style="display:none;">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+      </svg>
+      <h3 data-i18n="files.empty">لا توجد ملفات محفوظة</h3>
+      <p data-i18n="files.empty_description">قم بتحويل ملفات Markdown واحفظها هنا</p>
+    </div>
+
+    <div class="table-container" id="filesTable" style="display:none;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th data-i18n="auth.name">الاسم</th>
+            <th data-i18n="files.last_modified">التاريخ</th>
+            <th data-i18n="files.size">الحجم</th>
+            <th data-i18n="files.download">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="filesTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" data-i18n="ui.confirm.delete">تأكيد الحذف</h3>
+      <button class="modal-close" id="confirmModalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <p data-i18n="files.delete_confirm">هل أنت متأكد من حذف هذا الملف؟</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="confirmCancel" data-i18n="btn.cancel">إلغاء</button>
+      <button class="btn btn-danger" id="confirmDelete" data-i18n="btn.delete">حذف</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  let filesData = [];
+  let fileToDelete = null;
+  const activeDownloads = new Set();
+
+  function t(key, params = {}) {
+    return window.i18n ? window.i18n.t(key, params) : key;
+  }
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function formatSize(bytes) {
+    if (!bytes || bytes === 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let i = 0;
+    let size = bytes;
+    while (size >= 1024 && i < units.length - 1) {
+      size /= 1024;
+      i++;
+    }
+    return `${size.toFixed(1)} ${units[i]}`;
+  }
+
+  function formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ar-SA', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function getRowElements(fileId) {
+    const row = document.querySelector(`[data-file-id="${fileId}"]`);
+    if (!row) return {};
+
+    return {
+      row,
+      actions: row.querySelector('[data-row-actions]'),
+      progress: row.querySelector('[data-row-progress]'),
+      fill: row.querySelector('[data-download-fill]'),
+      status: row.querySelector('[data-download-status]'),
+      percent: row.querySelector('[data-download-percent]')
+    };
+  }
+
+  function setRowDownloading(fileId, isDownloading) {
+    const { row, actions, progress } = getRowElements(fileId);
+    if (!row) return;
+
+    if (actions) {
+      actions.style.display = isDownloading ? 'none' : '';
+    }
+
+    if (progress) {
+      progress.hidden = !isDownloading;
+      progress.classList.toggle('active', isDownloading);
+    }
+
+    row.setAttribute('aria-busy', isDownloading ? 'true' : 'false');
+  }
+
+  function updateRowDownloadProgress(fileId, progress) {
+    const { fill, status, percent } = getRowElements(fileId);
+    if (!fill || !status || !percent) return;
+
+    const value = Number.isFinite(progress.percent)
+      ? Math.max(0, Math.min(100, Math.round(progress.percent)))
+      : 0;
+
+    fill.classList.toggle('is-indeterminate', Boolean(progress.indeterminate));
+    fill.style.width = progress.indeterminate ? '35%' : `${value}%`;
+    status.textContent = progress.status || t('files.downloading');
+    percent.textContent = progress.indeterminate
+      ? formatSize(progress.loaded)
+      : t('progress.percent', { percent: value });
+  }
+
+  function restoreRowActions(fileId) {
+    const { fill, status, percent } = getRowElements(fileId);
+
+    if (fill) {
+      fill.classList.remove('is-indeterminate');
+      fill.style.width = '0%';
+    }
+
+    if (status) {
+      status.textContent = t('files.downloading');
+    }
+
+    if (percent) {
+      percent.textContent = t('progress.percent', { percent: 0 });
+    }
+
+    setRowDownloading(fileId, false);
+  }
+
+  async function handleFileDownload(file) {
+    if (!file || activeDownloads.has(file.id)) return;
+
+    activeDownloads.add(file.id);
+    setRowDownloading(file.id, true);
+    updateRowDownloadProgress(file.id, {
+      loaded: 0,
+      total: file.file_size || null,
+      percent: 0,
+      indeterminate: !Boolean(file.file_size)
+    });
+
+    try {
+      const result = await window.api.downloadFile(file.id, {
+        fileName: file.original_name,
+        onProgress: (progress) => updateRowDownloadProgress(file.id, progress)
+      });
+
+      updateRowDownloadProgress(file.id, {
+        loaded: result.size,
+        total: result.size,
+        percent: 100,
+        indeterminate: false,
+        status: t('progress.done')
+      });
+
+      await sleep(350);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('error.unknown');
+      window.showToast(message || t('error.unknown'), 'error');
+    } finally {
+      restoreRowActions(file.id);
+      activeDownloads.delete(file.id);
+    }
+  }
+
+  function renderFiles() {
+    const loadingEl = document.getElementById('filesLoading');
+    const emptyEl = document.getElementById('emptyState');
+    const tableEl = document.getElementById('filesTable');
+    const tbody = document.getElementById('filesTableBody');
+
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    if (!filesData || filesData.length === 0) {
+      emptyEl.style.display = 'block';
+      tableEl.style.display = 'none';
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    tableEl.style.display = 'block';
+
+    tbody.innerHTML = filesData.map(file => `
+      <tr data-file-id="${file.id}">
+        <td>
+          <div class="file-name-cell">
+            <span>📄</span>
+            <span>${escapeHtml(file.original_name)}</span>
+          </div>
+        </td>
+        <td>${formatDate(file.created_at)}</td>
+        <td>${formatSize(file.file_size)}</td>
+        <td class="download-cell">
+          <div class="file-actions" data-row-actions>
+            <button class="btn btn-sm btn-secondary" data-download="${file.id}" title="${t('files.download')}">
+              ${t('files.download')}
+            </button>
+            <button class="btn btn-sm btn-danger" data-delete="${file.id}" title="${t('files.delete')}">
+              ${t('files.delete')}
+            </button>
+          </div>
+          <div class="download-progress" data-row-progress hidden aria-live="polite">
+            <div class="progress-bar download-progress-bar">
+              <div class="progress-fill download-progress-fill" data-download-fill style="width: 0%;"></div>
+            </div>
+            <div class="progress-text download-progress-text">
+              <span data-download-status>${t('files.downloading')}</span>
+              <span data-download-percent>${t('progress.percent', { percent: 0 })}</span>
+            </div>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    tbody.querySelectorAll('[data-download]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const id = btn.getAttribute('data-download');
+        const file = filesData.find(item => item.id === id);
+        handleFileDownload(file);
+      });
+    });
+
+    tbody.querySelectorAll('[data-delete]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        fileToDelete = btn.getAttribute('data-delete');
+        document.getElementById('confirmModal').classList.add('open');
+      });
+    });
+  }
+
+  function updateStorage(storageInfo) {
+    if (storageInfo) {
+      const usedMB = (storageInfo.used / (1024 * 1024)).toFixed(2);
+      const limitMB = (storageInfo.limit / (1024 * 1024)).toFixed(0);
+      document.getElementById('storageUsed').textContent = `${usedMB} MB`;
+      document.getElementById('storageLimit').textContent = `${limitMB} MB`;
+      document.getElementById('fileCount').textContent = storageInfo.fileCount;
+      document.getElementById('fileLimit').textContent = storageInfo.fileLimit;
+    } else {
+      const usedBytes = filesData.reduce((sum, f) => sum + (f.file_size || 0), 0);
+      document.getElementById('storageUsed').textContent = `${(usedBytes / (1024 * 1024)).toFixed(2)} MB`;
+      document.getElementById('fileCount').textContent = filesData.length;
+    }
+  }
+
+  async function fetchFiles() {
+    try {
+      const result = await window.api.getFiles();
+      filesData = result.files || [];
+      renderFiles();
+
+      const storage = await window.api.getStorage();
+      updateStorage(storage);
+    } catch (err) {
+      document.getElementById('filesLoading').style.display = 'none';
+      document.getElementById('emptyState').style.display = 'block';
+      window.showToast(window.i18n ? window.i18n.t('error.network') : 'خطأ في تحميل الملفات', 'error');
+    }
+  }
+
+  async function deleteFile() {
+    if (!fileToDelete) return;
+
+    try {
+      await window.api.deleteFile(fileToDelete);
+      filesData = filesData.filter(f => f.id !== fileToDelete);
+      renderFiles();
+      updateStorage(null);
+      window.showToast(window.i18n ? window.i18n.t('files.delete_success') : 'تم حذف الملف', 'success');
+    } catch (err) {
+      window.showToast(window.i18n ? window.i18n.t('error.unknown') : 'فشل حذف الملف', 'error');
+    }
+
+    document.getElementById('confirmModal').classList.remove('open');
+    fileToDelete = null;
+  }
+
+  function initFiles() {
+    document.getElementById('confirmModalClose')?.addEventListener('click', () => {
+      document.getElementById('confirmModal').classList.remove('open');
+      fileToDelete = null;
+    });
+    document.getElementById('confirmCancel')?.addEventListener('click', () => {
+      document.getElementById('confirmModal').classList.remove('open');
+      fileToDelete = null;
+    });
+    document.getElementById('confirmDelete')?.addEventListener('click', deleteFile);
+
+    fetchFiles();
+
+    if (window.i18n) {
+      window.i18n.updateDOM();
+    }
+  }
+
+  window.initFiles = initFiles;
+</script>

@@ -1,0 +1,295 @@
+<style>
+  .auth-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    margin: 40px auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .auth-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .auth-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .auth-header p {
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+
+  .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 0.875rem;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.875rem;
+    transition: var(--transition);
+  }
+
+  .form-input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.1);
+  }
+
+  .form-input::placeholder {
+    color: var(--muted);
+  }
+
+  .form-input.error {
+    border-color: var(--error);
+  }
+
+  .error-message {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--error);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--error);
+    font-size: 0.875rem;
+    display: none;
+  }
+
+  .error-message.show {
+    display: block;
+  }
+
+  .btn-submit {
+    width: 100%;
+    padding: 14px 24px;
+    background: var(--navy);
+    color: var(--text);
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-submit:hover:not(:disabled) {
+    background: #2a4a73;
+  }
+
+  .btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .auth-footer {
+    text-align: center;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+
+  .auth-footer a {
+    color: var(--gold);
+    font-weight: 600;
+    margin-right: 8px;
+  }
+
+  .auth-footer a:hover {
+    color: #d4af37;
+  }
+
+  .btn-submit .spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .auth-card {
+      padding: 24px;
+    }
+
+    .auth-header h1 {
+      font-size: 1.5rem;
+    }
+  }
+</style>
+
+<div class="auth-card">
+  <div class="auth-header">
+    <h1 data-i18n="auth.login">تسجيل دخول</h1>
+    <p data-i18n="auth.loginSubtitle">سجّل دخولك للمتابعة</p>
+  </div>
+
+  <form id="loginForm" class="auth-form">
+    <div class="form-group">
+      <label for="loginEmail" class="form-label" data-i18n="auth.email">البريد الإلكتروني</label>
+      <input type="email" id="loginEmail" name="email" class="form-input" required autocomplete="email"
+        placeholder="أدخل بريدك الإلكتروني">
+    </div>
+
+    <div class="form-group">
+      <label for="loginPassword" class="form-label" data-i18n="auth.password">كلمة المرور</label>
+      <input type="password" id="loginPassword" name="password" class="form-input" required
+        autocomplete="current-password" placeholder="أدخل كلمة المرور">
+    </div>
+
+    <div class="error-message" id="loginError"></div>
+
+    <button type="submit" class="btn-submit" id="loginSubmitBtn" data-i18n="auth.login">
+      تسجيل دخول
+    </button>
+  </form>
+
+  <div class="auth-footer">
+    <span data-i18n="auth.no_account">ليس لديك حساب؟</span>
+    <a href="/register" data-link data-i18n="auth.register">إنشاء حساب</a>
+  </div>
+</div>
+
+<script>
+  console.log('LOGIN PAGE SCRIPT STARTED');
+  function initLogin() {
+    // alert('initLogin CALLED');
+    console.log('initLogin STARTED');
+    const form = document.getElementById('loginForm');
+    const emailInput = document.getElementById('loginEmail');
+    const passwordInput = document.getElementById('loginPassword');
+    const errorEl = document.getElementById('loginError');
+    const submitBtn = document.getElementById('loginSubmitBtn');
+
+    if (!form) {
+      alert('Form not found!');
+      return;
+    }
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.classList.add('show');
+    }
+
+    function hideError() {
+      errorEl.classList.remove('show');
+    }
+
+    function setLoading(loading) {
+      submitBtn.disabled = loading;
+      if (loading) {
+        submitBtn.innerHTML = '<span class="spinner"></span>';
+      } else {
+        const t = window.i18n ? window.i18n.t('auth.login') : 'تسجيل دخول';
+        submitBtn.textContent = t;
+      }
+    }
+    const HandleLogin = async (e) => {
+      console.log('HandleLogin called!');
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Event prevented');
+      hideError();
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      console.log('Email:', email, 'Password:', password ? 'provided' : 'empty');
+      
+      if (!email) {
+        showError(window.i18n ? window.i18n.t('error.email_invalid') : 'البريد الإلكتروني مطلوب');
+        emailInput.classList.add('error');
+        return;
+      }
+
+      if (!password) {
+        showError(window.i18n ? window.i18n.t('error.password_short') : 'كلمة المرور مطلوبة');
+        passwordInput.classList.add('error');
+        return;
+      }
+
+      setLoading(true);
+      console.log('Calling API...');
+
+      try {
+        const result = await window.api.login(email, password);
+        console.log("Login success: ", result);
+
+        if (result.user) {
+          window.currentUser = result;
+          window.updateAuthUI();
+          window.location.href = '/convert';
+        } else {
+          showError(result.error || (window.i18n ? window.i18n.t('error.login_failed') : 'فشل تسجيل الدخول'));
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        let msg;
+        try {
+          const parsed = JSON.parse(err.message);
+          msg = parsed.error;
+        } catch {
+          msg = err.message;
+        }
+        showError(msg || (window.i18n ? window.i18n.t('error.login_failed') : 'فشل تسجيل الدخول'));
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    console.log('Adding event listener...');
+    form.addEventListener('submit', HandleLogin);
+    console.log('Event listener added');
+
+    emailInput.addEventListener('input', () => {
+      emailInput.classList.remove('error');
+      hideError();
+    });
+
+    passwordInput.addEventListener('input', () => {
+      passwordInput.classList.remove('error');
+      hideError();
+    });
+
+    if (window.i18n) {
+      window.i18n.updateDOM();
+    }
+  }
+
+  window.initLogin = initLogin;
+</script>
