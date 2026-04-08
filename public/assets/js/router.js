@@ -101,7 +101,9 @@ class Router {
   async checkAuth() {
     try {
       const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
-      return res.ok;
+      if (!res.ok) return false;
+      const data = await res.json();
+      return data.user && data.user.id;
     } catch {
       return false;
     }

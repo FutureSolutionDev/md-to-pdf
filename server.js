@@ -165,8 +165,8 @@ app.get("/api/i18n/:lang", async (c) => {
     return c.json({ error: "Translation not found" }, 404);
   }
 
-  const content = await Bun.file(filePath).text();
-  return c.text(content, 200, { "Content-Type": "application/json" });
+  const content = await Bun.file(filePath).json();
+  return c.json(content, 200, { "Content-Type": "application/json" });
 });
 
 // Convert route
@@ -333,10 +333,28 @@ app.get("/download/:jobId", async (c) => {
   });
 });
 
-// Static files
+// Static files - serve /assets/* and /pages/* directly
 app.use("/assets/*", serveStatic({ root: "./public" }));
 app.use("/pages/*", serveStatic({ root: "./public" }));
-app.use("*", serveStatic({ root: "./public" }));
+
+// SPA fallback - serve index.html for any route that doesn't match static files
+app.use("*", async (c) => {
+  const path = c.req.path;
+  
+  // Don't handle API routes or conversion routes
+  if (path.startsWith("/api/") || path.startsWith("/convert") || path.startsWith("/stream") || path.startsWith("/download") || path.startsWith("/health")) {
+    return c.text("Not Found", 404);
+  }
+  
+  // For SPA routes, serve index.html
+  const indexPath = "./public/index.html";
+  if (existsSync(indexPath)) {
+    const content = await Bun.file(indexPath).text();
+    return c.html(content);
+  }
+  
+  return c.text("Not Found", 404);
+});
 
 process.on("uncaughtException", (err) => {
   console.error("[Uncaught Exception]", err.message);
