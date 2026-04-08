@@ -1,21 +1,24 @@
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { streamSSE } from "hono/streaming";
+import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { mkdirSync, existsSync } from "node:fs";
 import { unlink } from "node:fs/promises";
 import { extname, basename } from "node:path";
 import convert from "./convert";
+import * as auth from "./auth.js";
+import * as files from "./files.js";
 
 if (!existsSync("uploads")) mkdirSync("uploads", { recursive: true });
+if (!existsSync("storage")) mkdirSync("storage", { recursive: true });
 
 const app = new Hono();
 const jobs = new Map();
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const JOB_TTL = 10 * 60 * 1000; // 10 minutes
-const CLEANUP_INTERVAL = 60_000; // 1 minute
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const JOB_TTL = 10 * 60 * 1000;
+const CLEANUP_INTERVAL = 60_000;
 
-// تنظيف الـ jobs القديمة كل دقيقة
 setInterval(() => {
   const now = Date.now();
   for (const [id, job] of jobs) {
@@ -27,16 +30,156 @@ setInterval(() => {
   }
 }, CLEANUP_INTERVAL);
 
-// Global error handler
 app.onError((err, c) => {
-  console.error("[Server Error]", err.message);
-  return c.json({ error: "حدث خطأ داخلي في السيرفر" }, 500);
+  console.error("[Server Error]", err.message, err.stack);
+  return c.json({ error: err.message, details: err.stack }, 500);
 });
 
-// Health check
 app.get("/health", (c) => c.json({ status: "ok" }));
 
-// POST /convert
+app.get("/debug", (c) => {
+  try {
+    const sessionToken = c.req.cookie("session");
+    const user = sessionToken ? auth.verifySession(sessionToken) : null;
+    return c.json({ cookie: sessionToken || "none", user: user || null });
+  } catch (err) {
+    return c.json({ error: err.message, stack: err.stack }, 500);
+  }
+});
+
+// Auth middleware - reads session cookie for all /api/* routes
+app.use("/api/*", async (c, next) => {
+  const sessionToken = getCookie(c, "session");
+  const user = sessionToken ? auth.verifySession(sessionToken) : null;
+  c.set("user", user);
+  await next();
+});
+
+app.post("/api/auth/register", async (c) => {
+  const { name, email, password } = await c.req.json();
+  try {
+    const { user, token } = await auth.register(name, email, password);
+    setCookie(c, "session", token, auth.cookieOptions);
+    return c.json({ user });
+  } catch (err) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+app.post("/api/auth/login", async (c) => {
+  const { email, password } = await c.req.json();
+  try {
+    const { user, token } = await auth.login(email, password);
+    setCookie(c, "session", token, auth.cookieOptions);
+    return c.json({ user });
+  } catch (err) {
+    return c.json({ error: err.message }, 401);
+  }
+});
+
+app.post("/api/auth/logout", (c) => {
+  const token = getCookie(c, "session");
+  auth.logout(token);
+  deleteCookie(c, "session");
+  return c.json({ ok: true });
+});
+
+app.get("/api/auth/me", (c) => {
+  const user = c.get("user");
+  return c.json({ user: user || null });
+});
+
+app.post("/api/files/save/:jobId", async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const jobId = c.req.param("jobId");
+  const job = jobs.get(jobId);
+  if (!job) return c.json({ error: "Job not found" }, 404);
+  if (job.status !== "done") return c.json({ error: "Job not complete" }, 400);
+
+  try {
+    const file = await files.saveFile(user.id, job.pdfPath, job.originalName);
+    return c.json({ file });
+  } catch (err) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+app.get("/api/files", (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const userFiles = files.getUserFiles(user.id);
+  return c.json({ files: userFiles });
+});
+
+app.get("/api/files/:id", (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const fileId = c.req.param("id");
+  const file = files.getFile(fileId, user.id);
+  if (!file) return c.json({ error: "File not found" }, 404);
+
+  return c.json({ file });
+});
+
+app.get("/api/files/:id/download", async (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const fileId = c.req.param("id");
+  const file = files.getFile(fileId, user.id);
+  if (!file) return c.json({ error: "File not found" }, 404);
+
+  const fileData = await Bun.file(file.pdf_path).arrayBuffer();
+  return new Response(fileData, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(file.original_name)}`
+    }
+  });
+});
+
+app.delete("/api/files/:id", (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const fileId = c.req.param("id");
+  try {
+    files.deleteFile(fileId, user.id);
+    return c.json({ ok: true });
+  } catch (err) {
+    return c.json({ error: err.message }, 400);
+  }
+});
+
+app.get("/api/storage", (c) => {
+  const user = c.get("user");
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const storage = files.getUserStorage(user.id);
+  return c.json(storage);
+});
+
+// I18n route - serve translation files
+app.get("/api/i18n/:lang", async (c) => {
+  const lang = c.req.param("lang");
+  if (lang !== "ar" && lang !== "en") {
+    return c.json({ error: "Language not supported" }, 400);
+  }
+
+  const filePath = `src/i18n/${lang}.json`;
+  if (!existsSync(filePath)) {
+    return c.json({ error: "Translation not found" }, 404);
+  }
+
+  const content = await Bun.file(filePath).text();
+  return c.text(content, 200, { "Content-Type": "application/json" });
+});
+
+// Convert route
 app.post("/convert", async (c) => {
   let body;
   try {
@@ -68,6 +211,8 @@ app.post("/convert", async (c) => {
   const pdfPath = `uploads/${jobId}.pdf`;
   const originalName = basename(file.name, extname(file.name)) + ".pdf";
 
+  const user = c.get("user");
+
   try {
     await Bun.write(mdPath, await file.arrayBuffer());
   } catch {
@@ -81,6 +226,7 @@ app.post("/convert", async (c) => {
     mdPath,
     originalName,
     createdAt: Date.now(),
+    userId: user?.id,
   });
 
   // بدء التحويل في الخلفية
@@ -112,7 +258,6 @@ app.post("/convert", async (c) => {
   return c.json({ jobId });
 });
 
-// GET /stream/:jobId — SSE
 app.get("/stream/:jobId", (c) => {
   const jobId = c.req.param("jobId");
 
@@ -123,7 +268,7 @@ app.get("/stream/:jobId", (c) => {
   return streamSSE(c, async (stream) => {
     let lastIndex = 0;
     let ticks = 0;
-    const maxTicks = 600; // 2 minutes max (600 * 200ms)
+    const maxTicks = 600;
 
     while (ticks++ < maxTicks) {
       const job = jobs.get(jobId);
@@ -154,14 +299,12 @@ app.get("/stream/:jobId", (c) => {
       await stream.sleep(200);
     }
 
-    // Timeout
     await stream.writeSSE({
       data: JSON.stringify({ error: true, message: "انتهت مهلة التحويل" }),
     });
   });
 });
 
-// GET /download/:jobId
 app.get("/download/:jobId", async (c) => {
   const jobId = c.req.param("jobId");
   const job = jobs.get(jobId);
@@ -181,12 +324,16 @@ app.get("/download/:jobId", async (c) => {
     return c.json({ error: "فشل في قراءة ملف الـ PDF" }, 500);
   }
 
-  // تنظيف بعد التحميل
+  // Check if user is logged in for cleanup delay
+  const sessionToken = getCookie(c, "session");
+  const user = sessionToken ? auth.verifySession(sessionToken) : null;
+  const cleanupDelay = user ? 5 * 60 * 1000 : 500; // 5 min for logged in, 500ms for guests
+
   setTimeout(() => {
     unlink(job.mdPath).catch(() => {});
     unlink(job.pdfPath).catch(() => {});
     jobs.delete(jobId);
-  }, 500);
+  }, cleanupDelay);
 
   return new Response(fileData, {
     headers: {
@@ -197,9 +344,10 @@ app.get("/download/:jobId", async (c) => {
 });
 
 // Static files
+app.use("/assets/*", serveStatic({ root: "./public" }));
+app.use("/pages/*", serveStatic({ root: "./public" }));
 app.use("*", serveStatic({ root: "./public" }));
 
-// Process-level error handlers
 process.on("uncaughtException", (err) => {
   console.error("[Uncaught Exception]", err.message);
 });

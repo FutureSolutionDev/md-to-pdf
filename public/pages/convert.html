@@ -1,0 +1,440 @@
+<div class="page-content">
+  <div class="page-header" style="text-align: center; margin-bottom: 32px;">
+    <h1 style="font-size: 2rem; font-weight: 700; color: var(--text); margin-bottom: 8px;" data-i18n="convert.title">تحويل Markdown إلى PDF</h1>
+    <p style="color: var(--muted); font-size: 1rem;" data-i18n="convert.drop_subtitle">ارفع ملف .md واحصل على PDF احترافي</p>
+  </div>
+
+  <div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div class="drop-zone" id="dropZone" style="position: relative;">
+      <input type="file" id="fileInput" accept=".md" style="position: absolute; inset: 0; opacity: 0; cursor: pointer;">
+      <div class="drop-zone-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 64px; height: 64px; margin: 0 auto; display: block; color: var(--muted);">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      </div>
+      <div class="drop-zone-text" data-i18n="drop.title">اسحب ملف .md هنا</div>
+      <div class="drop-zone-hint" data-i18n="drop.subtitle">أو اضغط للاختيار</div>
+      <div class="drop-zone-hint" style="margin-top: 8px; font-size: 0.75rem;" data-i18n="convert.supported">الملفات المدعومة: .md</div>
+    </div>
+
+    <div class="file-info" id="fileInfo" style="display: none; margin-top: 20px; padding: 16px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border);">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="file-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px;">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </div>
+        <div style="flex: 1; overflow: hidden;">
+          <div class="file-name" id="fileName" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">filename.md</div>
+          <div class="file-meta" id="fileSize">0 KB</div>
+        </div>
+        <button type="button" id="clearFile" style="background: transparent; color: var(--muted); padding: 8px; border-radius: 6px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <button class="btn btn-gold" id="convertBtn" disabled style="width: 100%; margin-top: 20px; padding: 14px 24px; font-size: 1rem; display: none;" data-i18n="btn.convert">
+      تحويل إلى PDF
+    </button>
+
+    <div class="progress-section" id="progressSection" style="display: none; margin-top: 20px;">
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+        </div>
+        <div class="progress-text">
+          <span id="progressStatus" data-i18n="progress.preparing">جاري الإعداد...</span>
+          <span id="progressPercent">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="terminal" id="terminal" style="display: none; margin-top: 20px;">
+      <div class="terminal-header">
+        <span class="terminal-dot red"></span>
+        <span class="terminal-dot yellow"></span>
+        <span class="terminal-dot green"></span>
+        <span class="terminal-title">Console</span>
+      </div>
+      <div class="terminal-body" id="terminalBody">
+      </div>
+    </div>
+
+    <div class="result-actions" id="resultActions" style="display: none; margin-top: 20px; display: flex; gap: 12px;">
+      <button class="btn btn-gold" id="downloadBtn" style="flex: 1;" data-i18n="btn.download">
+        تحميل PDF
+      </button>
+      <button class="btn btn-primary" id="saveBtn" style="flex: 1; display: none;" data-i18n="btn.save">
+        حفظ في ملفاتي
+      </button>
+    </div>
+
+    <div class="error-box" id="errorBox" style="display: none; margin-top: 20px; padding: 16px; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--error); border-radius: 8px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="2" style="width: 24px; height: 24px; flex-shrink: 0;">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <div style="flex: 1;">
+          <div id="errorTitle" style="font-weight: 600; color: var(--error); margin-bottom: 4px;">خطأ</div>
+          <div id="errorMessage" style="color: var(--muted); font-size: 0.875rem;"></div>
+        </div>
+        <button type="button" id="closeError" style="background: transparent; color: var(--muted); padding: 4px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px;">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div style="margin-top: 20px; text-align: center;">
+      <button class="btn btn-secondary" id="newConversionBtn" style="display: none;" data-i18n="convert.new_conversion">
+        تحويل جديد
+      </button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  let selectedFile = null;
+  let conversionJobId = null;
+  let isLoggedIn = false;
+
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  function addTerminalLog(message, type = 'info') {
+    const terminalBody = document.getElementById('terminalBody');
+    const line = document.createElement('div');
+    line.className = 'terminal-line';
+    
+    if (type === 'command') {
+      line.innerHTML = `<span class="terminal-prompt">$</span><span class="terminal-command">${message}</span>`;
+    } else if (type === 'error') {
+      line.innerHTML = `<span class="terminal-output terminal-error">${message}</span>`;
+    } else {
+      line.innerHTML = `<span class="terminal-output">${message}</span>`;
+    }
+    
+    terminalBody.appendChild(line);
+    terminalBody.scrollTop = terminalBody.scrollHeight;
+  }
+
+  function showError(title, message) {
+    const errorBox = document.getElementById('errorBox');
+    const errorTitle = document.getElementById('errorTitle');
+    const errorMessage = document.getElementById('errorMessage');
+    
+    errorTitle.textContent = title;
+    errorMessage.textContent = message;
+    errorBox.style.display = 'block';
+  }
+
+  function hideError() {
+    document.getElementById('errorBox').style.display = 'none';
+  }
+
+  function updateProgress(percent, status) {
+    const progressFill = document.getElementById('progressFill');
+    const progressPercent = document.getElementById('progressPercent');
+    const progressStatus = document.getElementById('progressStatus');
+    
+    progressFill.style.width = percent + '%';
+    progressPercent.textContent = percent + '%';
+    progressStatus.textContent = status;
+  }
+
+  function showConvertButton() {
+    const convertBtn = document.getElementById('convertBtn');
+    convertBtn.style.display = 'block';
+    convertBtn.disabled = !selectedFile;
+  }
+
+  function hideConvertButton() {
+    document.getElementById('convertBtn').style.display = 'none';
+  }
+
+  function resetUI() {
+    selectedFile = null;
+    conversionJobId = null;
+    
+    document.getElementById('fileInput').value = '';
+    document.getElementById('fileInfo').style.display = 'none';
+    document.getElementById('convertBtn').style.display = 'none';
+    document.getElementById('progressSection').style.display = 'none';
+    document.getElementById('terminal').style.display = 'none';
+    document.getElementById('terminalBody').innerHTML = '';
+    document.getElementById('resultActions').style.display = 'none';
+    document.getElementById('downloadBtn').style.display = 'none';
+    document.getElementById('saveBtn').style.display = 'none';
+    document.getElementById('newConversionBtn').style.display = 'none';
+    document.getElementById('errorBox').style.display = 'none';
+    
+    updateProgress(0, 'جاري الإعداد...');
+  }
+
+  async function startConversion() {
+    if (!selectedFile) return;
+    
+    hideError();
+    hideConvertButton();
+    
+    const progressSection = document.getElementById('progressSection');
+    const terminal = document.getElementById('terminal');
+    const terminalBody = document.getElementById('terminalBody');
+    
+    progressSection.style.display = 'block';
+    terminal.style.display = 'block';
+    terminalBody.innerHTML = '';
+    
+    addTerminalLog(`Processing file: ${selectedFile.name}`, 'command');
+    addTerminalLog(`File size: ${formatFileSize(selectedFile.size)}`);
+    
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    
+    try {
+      const response = await fetch('/convert', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin'
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        addTerminalLog(`Error: ${errorText}`, 'error');
+        showError('خطأ', errorText);
+        document.getElementById('newConversionBtn').style.display = 'inline-flex';
+        return;
+      }
+      
+      const result = JSON.parse(await response.text());
+      conversionJobId = result.jobId;
+      
+      addTerminalLog(`Job created: ${conversionJobId}`);
+      addTerminalLog('Starting conversion...');
+      
+      updateProgress(10, 'جاري الرفع...');
+      startProgressStream(conversionJobId);
+      
+    } catch (err) {
+      addTerminalLog(`Error: ${err.message}`, 'error');
+      showError('خطأ', err.message);
+      document.getElementById('newConversionBtn').style.display = 'inline-flex';
+    }
+  }
+
+  async function startProgressStream(jobId) {
+    const eventSource = new EventSource(`/stream/${jobId}`);
+    
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'progress') {
+          updateProgress(data.percent, data.message);
+          addTerminalLog(data.message);
+        } else if (data.type === 'complete') {
+          updateProgress(100, 'اكتمل');
+          addTerminalLog('Conversion complete!');
+          showDownloadButton();
+          eventSource.close();
+        } else if (data.type === 'error') {
+          addTerminalLog(`Error: ${data.message}`, 'error');
+          showError('خطأ', data.message);
+          eventSource.close();
+        }
+      } catch (err) {
+        console.error('SSE parse error:', err);
+      }
+    };
+    
+    eventSource.onerror = (err) => {
+      addTerminalLog('Connection error, trying fallback...', 'error');
+      eventSource.close();
+      pollForResult(jobId);
+    };
+  }
+
+  async function pollForResult(jobId) {
+    const maxAttempts = 30;
+    let attempts = 0;
+    
+    const poll = async () => {
+      try {
+        const res = await fetch(`/status/${jobId}`, { credentials: 'same-origin' });
+        const data = await res.json();
+        
+        if (data.status === 'complete') {
+          updateProgress(100, 'اكتمل');
+          addTerminalLog('Conversion complete!');
+          showDownloadButton();
+        } else if (data.status === 'failed') {
+          addTerminalLog(`Error: ${data.error}`, 'error');
+          showError('خطأ', data.error);
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(poll, 1000);
+        }
+      } catch (err) {
+        console.error('Poll error:', err);
+      }
+    };
+    
+    poll();
+  }
+
+  function showDownloadButton() {
+    const resultActions = document.getElementById('resultActions');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const newConversionBtn = document.getElementById('newConversionBtn');
+    
+    resultActions.style.display = 'flex';
+    downloadBtn.style.display = 'block';
+    
+    if (isLoggedIn) {
+      saveBtn.style.display = 'block';
+    }
+    
+    newConversionBtn.style.display = 'inline-flex';
+  }
+
+  async function downloadPdf() {
+    if (!conversionJobId) return;
+    
+    window.location.href = `/download/${conversionJobId}`;
+  }
+
+  async function saveToFiles() {
+    if (!conversionJobId) return;
+    
+    const saveBtn = document.getElementById('saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'جاري الحفظ...';
+    
+    try {
+      const res = await fetch(`/api/files/save/${conversionJobId}`, {
+        method: 'POST',
+        credentials: 'same-origin'
+      });
+      
+      if (res.ok) {
+        addTerminalLog('File saved to My Files');
+        saveBtn.textContent = 'تم الحفظ';
+        saveBtn.disabled = true;
+      } else {
+        const error = await res.text();
+        showError('خطأ', error);
+      }
+    } catch (err) {
+      showError('خطأ', err.message);
+    }
+  }
+
+  async function checkAuth() {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'same-origin' });
+      isLoggedIn = res.ok;
+      
+      const saveBtn = document.getElementById('saveBtn');
+      if (isLoggedIn && conversionJobId) {
+        saveBtn.style.display = 'block';
+      }
+    } catch {
+      isLoggedIn = false;
+    }
+  }
+
+  function initConvert() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const clearFile = document.getElementById('clearFile');
+    const convertBtn = document.getElementById('convertBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const newConversionBtn = document.getElementById('newConversionBtn');
+    const closeError = document.getElementById('closeError');
+
+    checkAuth();
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFileSelect(files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFileSelect(e.target.files[0]);
+      }
+    });
+
+    function handleFileSelect(file) {
+      if (!file.name.endsWith('.md')) {
+        showError('خطأ', 'يجب أن يكون الملف بصيغة .md');
+        return;
+      }
+      
+      if (file.size > 10 * 1024 * 1024) {
+        showError('خطأ', 'حجم الملف كبير جداً (الحد الأقصى 10 ميجابايت)');
+        return;
+      }
+      
+      selectedFile = file;
+      fileName.textContent = file.name;
+      fileSize.textContent = formatFileSize(file.size);
+      fileInfo.style.display = 'block';
+      
+      hideError();
+      showConvertButton();
+    }
+
+    clearFile.addEventListener('click', () => {
+      selectedFile = null;
+      fileInput.value = '';
+      fileInfo.style.display = 'none';
+      hideConvertButton();
+    });
+
+    convertBtn.addEventListener('click', startConversion);
+    downloadBtn.addEventListener('click', downloadPdf);
+    saveBtn.addEventListener('click', saveToFiles);
+    newConversionBtn.addEventListener('click', resetUI);
+    closeError.addEventListener('click', hideError);
+
+    resetUI();
+  }
+
+  window.initConvert = initConvert;
+</script>

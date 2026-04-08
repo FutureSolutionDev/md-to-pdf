@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="pageTitles.login">تسجيل دخول - MD → PDF</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="/assets/css/main.css" rel="stylesheet">
+  <style>
+    .auth-page {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      background: var(--bg);
+    }
+
+    .auth-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .auth-header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .auth-header p {
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-label {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.875rem;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.875rem;
+      transition: var(--transition);
+    }
+
+    .form-input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.1);
+    }
+
+    .form-input::placeholder {
+      color: var(--muted);
+    }
+
+    .form-input.error {
+      border-color: var(--error);
+    }
+
+    .error-message {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--error);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--error);
+      font-size: 0.875rem;
+      display: none;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 14px 24px;
+      background: var(--navy);
+      color: var(--text);
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      background: #2a4a73;
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .auth-footer {
+      text-align: center;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+
+    .auth-footer a {
+      color: var(--gold);
+      font-weight: 600;
+      margin-right: 8px;
+    }
+
+    .auth-footer a:hover {
+      color: #d4af37;
+    }
+
+    .btn-submit .spinner {
+      width: 18px;
+      height: 18px;
+      border-width: 2px;
+      border-style: solid;
+    }
+
+    @media (max-width: 480px) {
+      .auth-card {
+        padding: 24px;
+      }
+
+      .auth-header h1 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1 data-i18n="auth.login">تسجيل دخول</h1>
+        <p data-i18n="auth.loginSubtitle">سجّل دخولك للمتابعة</p>
+      </div>
+      
+      <form id="loginForm" class="auth-form">
+        <div class="form-group">
+          <label for="email" class="form-label" data-i18n="auth.email">البريد الإلكتروني</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            class="form-input" 
+            required
+            autocomplete="email"
+            data-i18n-placeholder="auth.emailPlaceholder"
+            placeholder="أدخل بريدك الإلكتروني"
+          >
+        </div>
+        
+        <div class="form-group">
+          <label for="password" class="form-label" data-i18n="auth.password">كلمة المرور</label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            class="form-input" 
+            required
+            autocomplete="current-password"
+            data-i18n-placeholder="auth.passwordPlaceholder"
+            placeholder="أدخل كلمة المرور"
+          >
+        </div>
+        
+        <div class="error-message" id="errorMessage"></div>
+        
+        <button type="submit" class="btn-submit" id="submitBtn" data-i18n="auth.loginBtn">
+          تسجيل دخول
+        </button>
+      </form>
+      
+      <div class="auth-footer">
+        <span data-i18n="auth.noAccount">ليس لديك حساب؟</span>
+        <a href="/register" data-i18n="auth.registerLink">إنشاء حساب</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/js/i18n.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      i18n.init();
+    });
+
+    const loginForm = document.getElementById('loginForm');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const errorMessage = document.getElementById('errorMessage');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const showError = (message) => {
+      errorMessage.textContent = message;
+      errorMessage.classList.add('show');
+    };
+
+    const hideError = () => {
+      errorMessage.classList.remove('show');
+    };
+
+    const setLoading = (isLoading) => {
+      submitBtn.disabled = isLoading;
+      if (isLoading) {
+        submitBtn.innerHTML = '<span class="spinner"></span>';
+      } else {
+        submitBtn.textContent = i18n.t('auth.loginBtn');
+      }
+    };
+
+    const validateForm = () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!email) {
+        showError(i18n.t('errors.emailRequired'));
+        emailInput.classList.add('error');
+        return false;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showError(i18n.t('errors.invalidEmail'));
+        emailInput.classList.add('error');
+        return false;
+      }
+
+      if (!password) {
+        showError(i18n.t('errors.passwordRequired'));
+        passwordInput.classList.add('error');
+        return false;
+      }
+
+      emailInput.classList.remove('error');
+      passwordInput.classList.remove('error');
+      hideError();
+      return true;
+    };
+
+    const handleLogin = async (email, password) => {
+      try {
+        const response = await api.post('/api/auth/login', {
+          Email: email,
+          Password: password
+        });
+
+        if (response.Success) {
+          localStorage.setItem('token', response.Data.Token);
+          localStorage.setItem('user', JSON.stringify(response.Data.User));
+          window.location.href = '/';
+        } else {
+          showError(response.Error?.Message || i18n.t('errors.loginFailed'));
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        showError(i18n.t('errors.networkError'));
+      }
+    };
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!validateForm()) {
+        return;
+      }
+
+      setLoading(true);
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      await handleLogin(email, password);
+
+      setLoading(false);
+    });
+
+    emailInput.addEventListener('input', () => {
+      emailInput.classList.remove('error');
+      hideError();
+    });
+
+    passwordInput.addEventListener('input', () => {
+      passwordInput.classList.remove('error');
+      hideError();
+    });
+  </script>
+</body>
+</html>

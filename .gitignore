@@ -7,3 +7,7 @@ package-lock.json
 bun.lock
 PLAN.md
 Database/*
+nul
+cookies.txt
+ARCHITECTURE.md
+kill-port-*.bat
