@@ -11,6 +11,7 @@
 ![بعد التحويل](screenshots/success.png)
 
 ---
+
 # Demo
 
 [https://md.futuresolutionsdev.com](https://md.futuresolutionsdev.com/)
@@ -39,6 +40,72 @@
 ---
 
 ## التثبيت والتشغيل
+
+مهم جدا اذا كنت ستقوم برفعه علي استضافة يجب تثبيت `chromium-browser` او `chromium`
+
+### تثبيت chromium-browser Or chromium
+
+#### For Debian/Ubuntu based systems
+
+```bash
+sudo apt update
+sudo apt install chromium-browser
+# Or New If Not Working 
+sudo snap install chromium
+# Test 
+which chromium
+chromium --version
+```
+
+#### For CentOS/RHEL based systems
+
+```bash
+sudo yum update
+sudo yum install chromium
+# Test 
+which chromium
+chromium --version
+```
+
+#### For Fedora based systems
+
+```bash
+sudo dnf update
+sudo dnf install chromium
+# Test 
+which chromium
+chromium --version
+```
+
+#### For Arch Linux based systems
+
+```bash
+sudo pacman -Syu
+sudo pacman -S chromium
+# Test 
+which chromium
+chromium --version
+```
+
+#### For openSUSE based systems
+
+```bash
+sudo zypper update
+sudo zypper install chromium
+# Test 
+which chromium
+chromium --version
+```
+
+#### For Alpine Linux based systems
+
+```bash
+sudo apk update
+sudo apk add chromium
+# Test 
+which chromium
+chromium --version
+```
 
 ```bash
 # تثبيت الـ dependencies

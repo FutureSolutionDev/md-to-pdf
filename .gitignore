@@ -5,3 +5,4 @@ uploads
 package-lock.json
 .claude
 bun.lock
+PLAN.md
