@@ -255,7 +255,7 @@ ${htmlContent}
     footerTemplate: `
       <div style="width:100%; font-family:Arial,sans-serif; font-size:9px; color:#999;
                   display:flex; justify-content:space-between; padding:0 15mm; box-sizing:border-box; border-top:1px solid #eee;">
-        <span>فريق التطوير</span>
+        <span><a href="https://futuresolutionsdev.com" style="color:#1e3a5f; text-decoration:none;">futuresolutionsdev.com</a></span>
         <span><span class="pageNumber"></span> / <span class="totalPages"></span></span>
       </div>`,
     margin: {
