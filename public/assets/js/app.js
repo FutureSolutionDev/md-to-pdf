@@ -1,7 +1,9 @@
 let currentUser = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
-  await i18n.init();
+  if (window.i18n) {
+    await window.i18n.init();
+  }
   initRouter();
   initSidebar();
   initLangSwitcher();
@@ -11,19 +13,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function initRouter() {
-  router.addRoute("/", () => router.navigate("/convert"));
-  router.addRoute("/convert", renderConvertPage);
-  router.addRoute("/files", renderFilesPage);
-  router.addRoute("/login", renderLoginPage);
-  router.addRoute("/register", renderRegisterPage);
-  router.addRoute("/404", render404Page);
+  if (!window.router) {
+    console.error("Router not initialized");
+    return;
+  }
+  window.router.addRoute("/", () => window.router.navigate("/convert"));
+  window.router.addRoute("/convert", renderConvertPage);
+  window.router.addRoute("/files", renderFilesPage);
+  window.router.addRoute("/login", renderLoginPage);
+  window.router.addRoute("/register", renderRegisterPage);
+  window.router.addRoute("/404", render404Page);
 
-  router.init();
+  window.router.init();
 }
 
 async function checkAuth() {
   try {
-    currentUser = await api.me();
+    if (window.api) {
+      currentUser = await window.api.me();
+    }
   } catch {
     currentUser = null;
   }
@@ -35,9 +43,10 @@ function updateAuthUI() {
   const authLinks = document.querySelectorAll("[data-auth]");
 
   if (currentUser && userMenu) {
+    const logoutText = window.i18n ? window.i18n.t("nav.logout") : "تسجيل خروج";
     userMenu.innerHTML = `
       <span class="user-name">${currentUser.name || currentUser.email}</span>
-      <button class="logout-btn" onclick="handleLogout()">${i18n.t ? i18n.t("logout") : "تسجيل خروج"}</button>
+      <button class="logout-btn" onclick="handleLogout()">${logoutText}</button>
     `;
   }
 
@@ -53,44 +62,65 @@ function updateAuthUI() {
 
 async function handleLogout() {
   try {
-    await api.logout();
+    if (window.api) {
+      await window.api.logout();
+    }
   } catch {}
   currentUser = null;
   updateAuthUI();
-  router.navigate("/login");
-  showToast(i18n.t ? i18n.t("loggedOut") : "تم تسجيل الخروج بنجاح", "success");
+  if (window.router) {
+    window.router.navigate("/login");
+  }
+  const loggedOutText = window.i18n ? window.i18n.t("success.loggedOut") : "تم تسجيل الخروج بنجاح";
+  showToast(loggedOutText, "success");
 }
 
 async function renderConvertPage() {
-  await router.loadPage("convert");
+  if (window.router) {
+    await window.router.loadPage("convert");
+  }
 }
 
 async function renderFilesPage() {
   if (!currentUser) {
-    router.navigate("/login");
+    if (window.router) {
+      window.router.navigate("/login");
+    }
     return;
   }
-  await router.loadPage("files");
+  if (window.router) {
+    await window.router.loadPage("files");
+  }
 }
 
 async function renderLoginPage() {
   if (currentUser) {
-    router.navigate("/convert");
+    if (window.router) {
+      window.router.navigate("/convert");
+    }
     return;
   }
-  await router.loadPage("login");
+  if (window.router) {
+    await window.router.loadPage("login");
+  }
 }
 
 async function renderRegisterPage() {
   if (currentUser) {
-    router.navigate("/convert");
+    if (window.router) {
+      window.router.navigate("/convert");
+    }
     return;
   }
-  await router.loadPage("register");
+  if (window.router) {
+    await window.router.loadPage("register");
+  }
 }
 
 async function render404Page() {
-  await router.loadPage("404");
+  if (window.router) {
+    await window.router.loadPage("404");
+  }
 }
 
 function initSidebar() {
@@ -110,10 +140,10 @@ function toggleSidebar() {
 
 function initLangSwitcher() {
   const langSelect = document.getElementById("langSelect");
-  if (langSelect) {
-    langSelect.value = i18n.currentLang;
+  if (langSelect && window.i18n) {
+    langSelect.value = window.i18n.currentLang;
     langSelect.addEventListener("change", async (e) => {
-      await i18n.setLanguage(e.target.value);
+      await window.i18n.setLanguage(e.target.value);
       updateAuthUI();
     });
   }

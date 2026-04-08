@@ -142,4 +142,5 @@ router.addRoute('/404', async () => {
   await router.loadPage('404');
 });
 
-export default router;
+// Export for use in other scripts
+window.router = router;

@@ -100,4 +100,5 @@ const api = {
   }
 };
 
-export default api;
+// Export for use in other scripts
+window.api = api;

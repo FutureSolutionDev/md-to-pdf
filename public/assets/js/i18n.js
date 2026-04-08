@@ -57,4 +57,5 @@ class I18n {
   }
 }
 
-export const i18n = new I18n();
+// Export for use in other scripts
+window.i18n = new I18n();
