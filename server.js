@@ -340,13 +340,20 @@ app.use("/pages/*", serveStatic({ root: "./public" }));
 // SPA fallback - serve index.html for any route that doesn't match static files
 app.use("*", async (c) => {
   const path = c.req.path;
+  const method = c.req.method;
   
-  // Don't handle API routes or conversion routes
-  if (path.startsWith("/api/") || path.startsWith("/convert") || path.startsWith("/stream") || path.startsWith("/download") || path.startsWith("/health")) {
+  // Don't handle these routes at all - let them 404 or be handled elsewhere
+  if (path.startsWith("/api/") || path.startsWith("/health")) {
     return c.text("Not Found", 404);
   }
   
-  // For SPA routes, serve index.html
+  // Only block POST /convert (the API), allow GET /convert (SPA)
+  if (path === "/convert" && method === "POST") {
+    return c.text("Not Found", 404);
+  }
+  
+  // For all other routes (including /convert GET, /login, /register, /files, etc.)
+  // serve index.html for SPA
   const indexPath = "./public/index.html";
   if (existsSync(indexPath)) {
     const content = await Bun.file(indexPath).text();
@@ -355,6 +362,7 @@ app.use("*", async (c) => {
   
   return c.text("Not Found", 404);
 });
+  
 
 process.on("uncaughtException", (err) => {
   console.error("[Uncaught Exception]", err.message);
@@ -367,6 +375,7 @@ process.on("unhandledRejection", (reason) => {
 const server = Bun.serve({
   port: process.env.PORT || 3050,
   fetch: app.fetch,
+  idleTimeout: 60,
 });
 
 console.log(`Server running on http://localhost:${server.port}`);
