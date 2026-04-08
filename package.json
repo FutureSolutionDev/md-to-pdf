@@ -7,7 +7,7 @@
     "dev": "bun --watch run server.js"
   },
   "dependencies": {
-    "hono": "^4.7.5",
+    "hono": "^4.12.12",
     "markdown-it": "^14.1.1",
     "markdown-it-anchor": "^9.2.0",
     "markdown-it-table-of-contents": "^1.2.0",

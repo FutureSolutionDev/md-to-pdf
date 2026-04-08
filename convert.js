@@ -2,7 +2,64 @@ import MarkdownIt from "markdown-it";
 import anchor from "markdown-it-anchor";
 import toc from "markdown-it-table-of-contents";
 import puppeteer from "puppeteer-core";
-import chromium from "@sparticuz/chromium";
+import { existsSync } from "node:fs";
+
+const CHROME_PATHS = {
+  win32: [
+    process.env.CHROME_PATH,
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    `${process.env.LOCALAPPDATA}\\Google\\Chrome\\Application\\chrome.exe`,
+    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+    `${process.env.LOCALAPPDATA}\\Microsoft\\Edge\\Application\\msedge.exe`,
+  ],
+  linux: [
+    process.env.CHROME_PATH,
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+    "/snap/bin/chromium",
+    "/usr/lib/chromium/chromium",
+  ],
+  darwin: [
+    process.env.CHROME_PATH,
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+  ],
+};
+
+function findChrome() {
+  const platform = process.platform;
+  const paths = CHROME_PATHS[platform] || CHROME_PATHS.linux;
+
+  for (const p of paths) {
+    if (p && existsSync(p)) return p;
+  }
+
+  return null;
+}
+
+let cachedChromePath = null;
+
+function getChromePath() {
+  if (cachedChromePath) return cachedChromePath;
+
+  const found = findChrome();
+  if (!found) {
+    throw new Error(
+      "لم يتم العثور على متصفح Chrome أو Edge على هذا الجهاز.\n" +
+      "الحلول:\n" +
+      "1. ثبّت Google Chrome أو Microsoft Edge\n" +
+      "2. أو حدد المسار يدوياً عبر متغير البيئة CHROME_PATH"
+    );
+  }
+
+  cachedChromePath = found;
+  return found;
+}
 
 async function convert(mdContent, pdfFile, onLog = () => {}) {
   onLog(10, "جاري تحليل الـ Markdown...");
@@ -16,7 +73,12 @@ async function convert(mdContent, pdfFile, onLog = () => {}) {
     .use(anchor)
     .use(toc);
 
-  const htmlContent = md.render(mdContent);
+  let htmlContent;
+  try {
+    htmlContent = md.render(mdContent);
+  } catch (err) {
+    throw new Error(`فشل تحليل الـ Markdown: ${err.message}`);
+  }
 
   onLog(30, "جاري بناء هيكل HTML...");
 
@@ -231,45 +293,55 @@ ${htmlContent}
 
   onLog(50, "جاري تشغيل المتصفح...");
 
-  const browser = await puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
-    executablePath: await chromium.executablePath(),
-    headless: chromium.headless,
-  });
+  const chromePath = getChromePath();
+  let browser;
 
-  const page = await browser.newPage();
+  try {
+    browser = await puppeteer.launch({
+      executablePath: chromePath,
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu",
+      ],
+    });
 
-  onLog(70, "جاري تحميل المحتوى والخطوط...");
+    const page = await browser.newPage();
 
-  await page.setContent(fullHtml, { waitUntil: "networkidle0" });
+    onLog(70, "جاري تحميل المحتوى والخطوط...");
 
-  onLog(85, "جاري إنشاء الـ PDF...");
+    await page.setContent(fullHtml, { waitUntil: "networkidle0" });
 
-  await page.pdf({
-    path: pdfFile,
-    format: "A4",
-    printBackground: true,
-    displayHeaderFooter: true,
-    headerTemplate: `<div style="width:100%; height:6px; background:linear-gradient(to right,#1e3a5f,#c9a227); margin:0;"></div>`,
-    footerTemplate: `
+    onLog(85, "جاري إنشاء الـ PDF...");
+
+    await page.pdf({
+      path: pdfFile,
+      format: "A4",
+      printBackground: true,
+      displayHeaderFooter: true,
+      headerTemplate: `<div style="width:100%; height:6px; background:linear-gradient(to right,#1e3a5f,#c9a227); margin:0;"></div>`,
+      footerTemplate: `
       <div style="width:100%; font-family:Arial,sans-serif; font-size:9px; color:#999;
                   display:flex; justify-content:space-between; padding:0 15mm; box-sizing:border-box; border-top:1px solid #eee;">
         <span><a href="https://futuresolutionsdev.com" style="color:#1e3a5f; text-decoration:none;">futuresolutionsdev.com</a></span>
         <span><span class="pageNumber"></span> / <span class="totalPages"></span></span>
       </div>`,
-    margin: {
-      top: "18mm",
-      right: "15mm",
-      bottom: "18mm",
-      left: "15mm",
-    },
-  });
-
-  await browser.close();
+      margin: {
+        top: "8mm",
+        right: "8mm",
+        bottom: "8mm",
+        left: "8mm",
+      },
+    });
+  } finally {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+  }
 
   onLog(100, "✅ تم إنشاء الـ PDF بنجاح");
 }
 
 export default convert;
-
