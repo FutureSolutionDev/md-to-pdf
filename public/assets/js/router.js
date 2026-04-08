@@ -65,25 +65,33 @@ class Router {
   }
 
   async init() {
+    console.log('Router.init() started');
     const path = window.location.pathname;
     const initialPath = path === '/' ? '/convert' : path;
+    console.log('Initial path:', initialPath);
 
     window.addEventListener('popstate', () => {
+      console.log('Popstate event');
       this.handleRoute(window.location.pathname);
     });
 
+    // Add click handler
     document.addEventListener('click', (e) => {
       const link = e.target.closest('[data-link]');
       if (link) {
+        console.log('Link clicked:', link.href);
         e.preventDefault();
         const href = link.getAttribute('href');
+        console.log('Navigating to:', href);
         if (href && href !== window.location.pathname) {
           this.navigate(href);
         }
       }
     });
 
+    console.log('Calling handleRoute for:', initialPath);
     await this.handleRoute(initialPath);
+    console.log('Router.init() completed');
   }
 
   setBeforeEach(fn) {
