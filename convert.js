@@ -330,7 +330,7 @@ ${htmlContent}
     await page.setContent(fullHtml, { waitUntil: "domcontentloaded", timeout: 60000 });
 
     // Wait a bit for fonts to load
-    await page.waitForTimeout(2000);
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     onLog(85, "جاري إنشاء الـ PDF...");
 
